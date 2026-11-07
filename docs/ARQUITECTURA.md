@@ -14,17 +14,19 @@ El Hub de Deuda se reparte en **tres infraestructuras** y cada una tiene un pape
 
 | Archivo | Qué es | Estado |
 |---|---|---|
-| [`arquitectura.archify.json`](arquitectura.archify.json) | **Diagrama oficial**, en formato [Archify](https://github.com/tt-a1i/archify) v3.2.0 (tipo `architecture`, `schema_version` 1): 3 regiones, flujos 1–10 en las etiquetas, flecha `dashed` para la opción futura, tarjetas con limitantes y 5 vistas guiadas | Especificación lista; falta renderizarla |
-| [`arquitectura-archify.html`](arquitectura-archify.html) | HTML autocontenido que genera Archify a partir del JSON | **Todavía no existe:** se crea con el comando de abajo |
-| [`arquitectura.html`](arquitectura.html) | Respaldo dibujado a mano en SVG, con leyenda y modo oscuro | Listo |
+| [`arquitectura-archify.html`](arquitectura-archify.html) | **Diagrama oficial: lo construido al 7 nov 2026.** HTML autocontenido generado por [Archify](https://github.com/tt-a1i/archify) v3.2.0: 3 zonas (Microsoft 365 + Power Platform, Azure `rg-hubdeuda-dev`, PC), nombres reales de los recursos, botón «Cargar ahora», tramos pendientes en línea punteada, 4 vistas guiadas, tarjetas de estado y modo claro/oscuro; se exporta a imagen o SVG desde el botón «Exportar» | Generado; pasó validación, entrega, revisión estricta y comprobación en navegador |
+| [`arquitectura.archify.json`](arquitectura.archify.json) | Especificación de la que sale el HTML (tipo `architecture`, `schema_version` 1) | Al día |
+| [`arquitectura.html`](arquitectura.html) | Respaldo dibujado a mano en SVG con la arquitectura **planificada** (incluye el prototipo del VPS) | Histórico |
 
-Archify no se publica en npm ni tiene librería para CDN: el HTML lo produce su CLI de Node, que hace validación, entrega, revisión estricta y una comprobación en navegador real. Para generarlo (Node 18 o superior), con una copia de Archify v3.2.0 en, por ejemplo, `D:\herramientas\archify`, se ejecuta desde `D:\hub-deuda-azure`:
+Las secciones 1 a 4 de este documento describen la arquitectura planificada, con las tres infraestructuras. Lo que de verdad está desplegado y su estado se ve en el diagrama de Archify y en [DOCUMENTO_TECNICO.md](DOCUMENTO_TECNICO.md).
+
+Archify no se publica en npm: el HTML lo produce su CLI de Node (18 o superior), que valida, entrega, hace una revisión estricta y una comprobación en navegador real. Basta con la carpeta `archify/` del repositorio de Archify (unos 18 MB). Para regenerarlo tras editar el JSON, desde `D:\hub-deuda-azure`:
 
 ```powershell
-node D:\herramientas\archify\archify\bin\archify.mjs finalize architecture docs\arquitectura.archify.json docs\arquitectura-archify.html --quality showcase --json
+$env:ARCHIFY_UPDATE_CHECK_DISABLED="1"; node <ruta>\archify\bin\archify.mjs finalize architecture docs\arquitectura.archify.json docs\arquitectura-archify.html --quality showcase --json
 ```
 
-Si el comando reporta cruces o etiquetas que no caben, se corrigen solo las posiciones (`pos`, `via`) en el JSON y se vuelve a ejecutar.
+Si el comando reporta cruces o etiquetas que no caben, se corrigen solo las posiciones (`pos`, `size`) en el JSON y se vuelve a ejecutar. Las etiquetas `tag` de cada nodo solo se ven al pasar el ratón, por eso el estado («pendiente», «detenido», «sin publicar») va en la subetiqueta.
 
 ## 1. Diagrama
 

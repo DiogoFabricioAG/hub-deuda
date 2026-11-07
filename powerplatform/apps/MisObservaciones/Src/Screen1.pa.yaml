@@ -108,6 +108,33 @@ Screens:
             Y: =116
             Width: =220
             Height: =40
+      - btnCargarAhora:
+          Control: Classic/Button
+          Properties:
+            Text: ="Cargar ahora"
+            OnSelect: |-
+              =Set(varCarga, fl_cargar_ahora.Run(Value(Left(ddArea.Selected.Value, 2))));
+              Notify(varCarga.mensaje & If(IsBlank(varCarga.loteid), "", " · lote " & Left(varCarga.loteid, 8)),
+                If(varCarga.estado = "RECIBIDO", NotificationType.Success, NotificationType.Error))
+            Fill: =RGBA(16, 124, 16, 1)
+            X: =1128
+            Y: =116
+            Width: =214
+            Height: =40
+      - lblCarga:
+          Control: Label
+          Properties:
+            Text: |-
+              =If(IsBlank(varCarga), "Tras corregir el libro, pulse «Cargar ahora»; la validación tarda alrededor de 1 minuto",
+                "Última solicitud: " & varCarga.estado &
+                If(IsBlank(varCarga.loteid), "", " · lote " & Left(varCarga.loteid, 8) & " · pulse Actualizar en 1 minuto"))
+            Size: =11
+            Color: =If(IsBlank(varCarga) || varCarga.estado = "RECIBIDO", RGBA(90, 90, 90, 1), RGBA(196, 43, 28, 1))
+            Align: =Align.Right
+            X: =700
+            Y: =164
+            Width: =642
+            Height: =24
       - lblResumen:
           Control: Label
           Properties:

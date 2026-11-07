@@ -26,6 +26,8 @@ Este documento describe **cómo está construido** (secciones 1 a 8) y **cómo s
 
 ## 2. Arquitectura
 
+Diagrama interactivo con el estado real al 7 nov 2026: [arquitectura-archify.html](arquitectura-archify.html) (generado con Archify; se abre en el navegador y permite exportar imagen). Resumen:
+
 ```mermaid
 flowchart LR
   subgraph M365["Microsoft 365 / Power Platform (tenant UNI)"]
@@ -150,7 +152,7 @@ Un **fallo técnico** (red, bloqueo, base no disponible) no se registra como arc
 |---|---|---|
 | `fl_copia_area` (hijo) | Manual / llamado por otros flujos | Lee `ConfigAreas`, lee el ETag del libro, descarga el contenido, vuelve a leer el ETag; si cambió, falla sin escribir (T15). Guarda `raw/areaNN/AAAA/MM/DD/<LoteId>.xlsx` y **después** `manifests/<LoteId>.json` |
 | `fl_copia_programada` | Diario 13:00 y 18:00 (hora de Lima) | Recorre las áreas activas una por una y llama al hijo |
-| `fl_cargar_ahora` | Power Apps (V2) | Verifica que quien pide sea el `ResponsableUPN` del área y llama al hijo; devuelve LoteId y «Carga recibida, validación pendiente» |
+| `fl_cargar_ahora` | Power Apps (V2), botón «Cargar ahora» de «Mis observaciones» | Verifica que quien pide sea el `ResponsableUPN` del área y llama al hijo; devuelve LoteId y «Carga recibida, validación pendiente» |
 
 Los flujos están versionados como JSON en `powerplatform/flows/` y se despliegan con `tools/powerplatform.py` mediante la API web de Dataverse.
 
@@ -165,7 +167,7 @@ Pipeline `pl_base_completa`: `usp_CrearExportacion` en BDOrigen (conteo, corte y
 | App | Datos | Qué permite |
 |---|---|---|
 | Consulta de deuda | `vDeuda`, `vMovimientoDetalle`, `vEstadoFuentes` | Buscar por papeleta, DNI/RUC o placa; ver saldo, documento enmascarado, movimientos por área y fecha de corte de cada fuente |
-| Mis observaciones | `vObservaciones01`…`10` | Elegir el área, ver errores pendientes y subsanados, abrir la carpeta del área en SharePoint |
+| Mis observaciones | `vObservaciones01`…`10`, flujo `fl_cargar_ahora` | Elegir el área, ver errores pendientes y subsanados, abrir la carpeta del área en SharePoint y pedir la validación inmediata con **«Cargar ahora»** (responde RECIBIDO y el LoteId; la Function lo procesa en el minuto siguiente) |
 
 Las dos son **apps de lienzo escritas como código** (`powerplatform/apps/<App>/Src/Screen1.pa.yaml`). `tools/publicar_apps.ps1` las empaqueta con `pac canvas pack`, las inserta en la solución exportada y la vuelve a importar.
 
@@ -224,6 +226,7 @@ Matriz completa en [MATRIZ_PERMISOS.md](MATRIZ_PERMISOS.md).
 18. **Documentación y Power BI en paralelo.** Dos subagentes generaron el diccionario de datos, la matriz de permisos, el registro de decisiones, el estado de pruebas y el proyecto PBIP.
 19. **Commit.** Todo se confirmó en git (`2004c`) tras revisar que no hubiera secretos; los archivos con datos de la cuenta quedaron ignorados.
 20. **Ahorro de la oferta gratuita de SQL.** La revisión detectó que la Function mantenía la base siempre encendida (1 conexión por minuto en la métrica). Se agregó la marca de estado en los metadatos de cada manifiesto, permiso de escritura solo en el contenedor `manifests` y la carga base dos veces al día; 17/17 pruebas locales.
+21. **Botón «Cargar ahora».** Se agregó el flujo `fl_cargar_ahora` como origen de datos de «Mis observaciones» desde Studio, se publicó, se descargó de nuevo con `pac` y se escribieron en `pa.yaml` el botón y la etiqueta de estado. Prueba: Tesorería → RECIBIDO (lote `02ff35c9`) → ACEPTADO por la Function en menos de 1 minuto.
 
 ### Problemas encontrados y cómo se resolvieron
 
@@ -238,6 +241,7 @@ Matriz completa en [MATRIZ_PERMISOS.md](MATRIZ_PERMISOS.md).
 | Importación de la solución falla | .NET Framework escribe rutas con `\` en el zip | Reemplazar solo las entradas `.msapp` dentro del zip original |
 | App en blanco | Propiedad `Value` no válida en el desplegable clásico | Lista simple de nombres |
 | Azure SQL nunca se pausaba | La Function consultaba SQL cada minuto aunque no hubiera trabajo | Estado del manifiesto en metadatos de Blob; SQL solo con manifiestos nuevos |
+| La app descargada no traía el flujo | `pac canvas download` baja la versión **publicada** | Publicar en Studio antes de descargar |
 
 ---
 
@@ -245,7 +249,7 @@ Matriz completa en [MATRIZ_PERMISOS.md](MATRIZ_PERMISOS.md).
 
 - **Consumo de la oferta gratuita de Azure SQL (corregido el 7 nov 2026).** La Function abría SQL cada minuto mientras existiera algún manifiesto, y la base nunca se pausaba: la oferta gratuita (100 000 vCore-segundos al mes, unas 55 h a 0.5 vCore) se habría agotado en unos 2 días. Ahora la Function marca cada manifiesto en sus metadatos de Blob (`hd_estado=terminal` o `hd_proximo=<reintento>`) y **no abre SQL si no hay manifiestos nuevos** (pruebas `tests/test_sin_consultas.py`). Además, la carga base de ADF pasó de cada hora a 12:55 y 17:55. Azure no permite bajar la pausa automática de 60 minutos en una base de oferta gratuita que se pausa al agotarla, así que cada carga mantiene la base encendida unos 60 minutos: con dos ventanas al día el consumo queda cerca del límite mensual, y el uso intensivo de las apps lo suma. Se vigila con la métrica `free_amount_remaining`.
 - Cada copia programada crea un lote RECHAZADO (CARGA_VACIA) y un aviso por cada área con plantilla vacía; falta el mecanismo de «autorización de inicialización».
-- `fl_cargar_ahora` está desplegado, pero ninguna app lo invoca todavía.
+- La huella del lote es el SHA-256 del **archivo**: si Excel guarda una versión nueva sin cambiar filas, el lote se acepta otra vez (mismos movimientos, mismo saldo) en lugar de quedar SIN_CAMBIOS. Ocurrió con el lote `02ff35c9` (versión 5 del libro de Tesorería). Si se quisiera SIN_CAMBIOS en ese caso, la huella tendría que calcularse sobre las filas normalizadas.
 - Con el Developer Plan solo el dueño ejecuta las apps y flujos Premium.
 - La prueba T12 necesita una segunda cuenta UNI; hoy el mismo usuario es responsable de las 10 áreas en `ConfigAreas`.
 - T13 (SHIR detenido) no deja una carga FALLIDA visible: el pipeline falla antes de registrar la carga.
@@ -263,11 +267,11 @@ Registro de decisiones en [DECISIONES.md](DECISIONES.md).
 | 3 | Cargar la base por Data Factory y activar la carga programada | Agente | `.\tools\ejecutar_pipeline_base.ps1 -ActivarDisparador` tras una ejecución exitosa (12:55 y 17:55) |
 | 4 | Flujo de avisos por correo | Agente | Leer `Notificacion` pendiente y enviar a `DestinoAvisos` con la conexión de Outlook |
 | 5 | Reporte PDF | Agente + usuario | Plantilla Word con controles de contenido y flujo `fl_reporte_deuda` (conector Word Online) |
-| 6 | Botón «Cargar ahora» en la app | Agente | Conectar `fl_cargar_ahora` desde «Mis observaciones» |
+| 6 | ~~Botón «Cargar ahora» en la app~~ | Agente | **Hecho** el 7 nov 2026: probado con Tesorería (lote `02ff35c9`) |
 | 7 | Abrir y publicar el tablero Power BI | Usuario | Power BI Desktop → abrir `powerbi\HubDeuda.pbip` → Publicar en «Mi área de trabajo» |
 | 8 | Pruebas T05–T15 en Azure con evidencias | Agente | T12 necesita la cuenta UNI de otro integrante; T13 necesita el SHIR |
 | 9 | Permisos por carpeta de área en SharePoint | Agente + usuario | Requiere cuentas o grupos por área |
-| 10 | Confirmar en git la documentación y Power BI | Agente | Segundo commit con `docs/` y `powerbi/` |
+| 10 | ~~Confirmar en git la documentación y Power BI~~ | Agente | **Hecho** (commit `e37fb`) |
 | 11 | Cierre del curso | Usuario | Detener los disparadores y eliminar `rg-hubdeuda-dev` para que no siga cobrando |
 
 ---

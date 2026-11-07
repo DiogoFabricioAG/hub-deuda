@@ -110,6 +110,7 @@ Las columnas **LoteId** y **Evidencia** se completan al adjuntar las capturas en
 |---|---|---|
 | Prueba de humo `tools/prueba_humo_azure.py` (sube raw y manifiesto sin pasar por Power Automate) | Detectó el error 229 (falta `SELECT` sobre `Notificacion` para `rol_hub_integracion`); se corrigió con la migración `005_permiso_notificacion.sql` y la regresión `test_permisos.py` | 2026-11-07 |
 | Semilla del anexo, parcial | Cargo de 15 (área 02) y descuento de 10 (área 07) aceptados → P0001 75.00, total 405.00 | 2026-11-07 |
+| Botón «Cargar ahora» (CU04) | Tesorería desde «Mis observaciones» → RECIBIDO, lote `02ff35c9` ACEPTADO en menos de 1 minuto, sin observaciones; P0001 sigue en 75.00 y total 355.00 (incluye `TES0002`, PAGO 50 a P0002). Evidencia `evidencias/2026-11-07_app-observaciones-cargar-ahora-RECIBIDO.jpg` | 2026-11-07 |
 | Libro vacío | Las 9 áreas con plantillas vacías quedaron `RECHAZADO` con `CARGA_VACIA`. Es el comportamiento esperado por la regla de la guía (un libro vacío requiere autorización) | 2026-11-07 |
 
 ---

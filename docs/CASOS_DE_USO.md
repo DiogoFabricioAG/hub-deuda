@@ -135,11 +135,12 @@ sequenceDiagram
 |---|---|
 | **Actor** | Responsable de área |
 | **Objetivo** | No esperar al horario programado tras corregir su libro |
-| **Flujo principal** | 1. Pide la carga indicando su área. 2. `fl_cargar_ahora` compara su correo con el `ResponsableUPN` del área. 3. Llama a `fl_copia_area`. 4. Responde «Carga recibida, validación pendiente» con el LoteId |
+| **Flujo principal** | 1. En «Mis observaciones» elige su área y pulsa **«Cargar ahora»**. 2. `fl_cargar_ahora` compara su correo con el `ResponsableUPN` del área. 3. Llama a `fl_copia_area`. 4. Responde «Carga recibida, validación pendiente» con el LoteId; la app lo muestra en un aviso y en la etiqueta «Última solicitud» |
 | **Alternos** | Quien pide no es el responsable: «NO_AUTORIZADO», no se copia nada |
 | **Resultado** | Lote recibido; la validación ocurre en CU05, en el minuto siguiente |
-| **Cómo está construido** | `powerplatform/flows/fl_cargar_ahora.json` (disparador Power Apps V2) |
-| **Estado** | Desplegado; falta el botón en la app. Hoy se ejecuta desde Power Automate con «Ejecutar» sobre `fl_copia_area` |
+| **Cómo está construido** | `powerplatform/flows/fl_cargar_ahora.json` (disparador Power Apps V2); botón `btnCargarAhora` y etiqueta `lblCarga` en `powerplatform/apps/MisObservaciones/Src/Screen1.pa.yaml` |
+| **Estado** | Funcionando (7 nov 2026): Tesorería → lote `02ff35c9` RECIBIDO y ACEPTADO por la Function en menos de 1 minuto, sin observaciones y sin cambiar saldos |
+| **Evidencia** | `evidencias/2026-11-07_app-observaciones-cargar-ahora-RECIBIDO.jpg` |
 
 ### CU05 — Validar y publicar un lote
 
@@ -151,7 +152,7 @@ sequenceDiagram
 | **Alternos** | Errores → CU06. Mismo contenido o versión antigua → CU08. Fallo técnico → reintento con espera de 1 a 60 minutos, sin marcar el archivo como inválido |
 | **Resultado** | Lote ACEPTADO; el saldo cambia de una sola vez |
 | **Cómo está construido** | `functions/procesador.py`, `validacion.py`, `repositorio_sql.py`; procedimiento en `sql/hub/003_procedimientos.sql` |
-| **Evidencia** | Tesorería PAGO 30 → P0001 = 70; cargo 15 y descuento 10 → P0001 = 75, total 405 |
+| **Evidencia** | Tesorería PAGO 30 → P0001 = 70; cargo 15 y descuento 10 → P0001 = 75, total 405; luego Tesorería agregó `TES0002` (PAGO 50 a P0002) → total 355 |
 
 ### CU06 — Rechazar un libro inválido
 
@@ -226,8 +227,7 @@ sequenceDiagram
 
 | Caso | Estado |
 |---|---|
-| CU01, CU02, CU03, CU05, CU06, CU07, CU08 | Funcionando y verificados en Azure |
-| CU04 | Flujo desplegado; falta el botón en la app |
+| CU01, CU02, CU03, CU04, CU05, CU06, CU07, CU08 | Funcionando y verificados en Azure |
 | CU09 | Publicado; falta instalar el SHIR en el PC |
 | CU10 | Funcionando en la app; Power BI pendiente de publicar |
 | CU11 | Implementado y probado en local |
