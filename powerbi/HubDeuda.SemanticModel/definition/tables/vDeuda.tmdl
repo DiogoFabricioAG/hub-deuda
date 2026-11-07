@@ -1,0 +1,119 @@
+/// Una fila por PapeletaId (dbo.vDeuda). La columna Documento (dato personal) no se importa.
+table vDeuda
+	lineageTag: 835c01dc-a1b9-5459-896e-92960755080b
+
+	/// Suma del saldo de las papeletas (una fila por PapeletaId).
+	measure SaldoTotal = SUM(vDeuda[Saldo])
+		formatString: #,0.00
+		displayFolder: Métricas de deuda
+		lineageTag: 224e2760-abef-5496-89f0-8f520f5923d4
+
+	/// Cantidad de papeletas distintas.
+	measure Papeletas = DISTINCTCOUNT(vDeuda[PapeletaId])
+		formatString: #,0
+		displayFolder: Métricas de deuda
+		lineageTag: de07ddf8-ba39-5b56-b135-2aaa13d7e9de
+
+	/// Suma del importe original.
+	measure ImporteOriginalTotal = SUM(vDeuda[ImporteOriginal])
+		formatString: #,0.00
+		displayFolder: Métricas de deuda
+		lineageTag: 200131e4-da80-58fa-baf7-3d0ff403eb9a
+
+	/// Suma del ajuste neto de movimientos activos.
+	measure MovimientosNetos = SUM(vDeuda[Movimientos])
+		formatString: #,0.00
+		displayFolder: Métricas de deuda
+		lineageTag: dee38cc8-dfe5-5081-becc-b2a7921321bd
+
+	/// Papeletas con saldo negativo.
+	measure PapeletasRequierenRevision = COALESCE(CALCULATE(DISTINCTCOUNT(vDeuda[PapeletaId]), vDeuda[RequiereRevision] = TRUE()), 0)
+		formatString: #,0
+		displayFolder: Métricas de deuda
+		lineageTag: 724753eb-ce22-5c46-8896-41955c023123
+
+	/// Fecha de corte (UTC) de la base vigente.
+	measure CorteBaseUtc = MAX(vDeuda[CorteUtc])
+		formatString: yyyy-mm-dd hh:nn
+		displayFolder: Métricas de deuda
+		lineageTag: aa175345-741f-5356-b2b7-55188efdbe25
+
+	column PapeletaId
+		dataType: string
+		lineageTag: 77f026de-3345-5a93-9fe3-68e22fddd6cb
+		summarizeBy: none
+		sourceColumn: PapeletaId
+
+	column TipoDoc
+		dataType: string
+		lineageTag: bd860f1b-4edb-5c15-ab73-d60ea20d6268
+		summarizeBy: none
+		sourceColumn: TipoDoc
+
+	/// Documento enmascarado (2 primeros y 2 últimos caracteres).
+	column DocumentoEnmascarado
+		dataType: string
+		lineageTag: 26fa387d-8f8f-537f-9131-b00af7316c3e
+		summarizeBy: none
+		sourceColumn: DocumentoEnmascarado
+
+	column Placa
+		dataType: string
+		lineageTag: 2cb8a5d7-acae-55d4-9bf2-42ddd1cc5229
+		summarizeBy: none
+		sourceColumn: Placa
+
+	column ImporteOriginal
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: ea1dbdbd-f491-574b-8b51-ff8662f60675
+		summarizeBy: sum
+		sourceColumn: ImporteOriginal
+
+	/// Ajuste neto de movimientos activos (con signo).
+	column Movimientos
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: e2086999-e7bd-56c2-a9f1-295a473a1444
+		summarizeBy: sum
+		sourceColumn: Movimientos
+
+	/// ImporteOriginal + Movimientos. Puede ser negativo.
+	column Saldo
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: c94fab18-5d7d-5bdd-8a88-85eb931aed4f
+		summarizeBy: sum
+		sourceColumn: Saldo
+
+	/// Verdadero si el saldo es negativo (pago en exceso).
+	column RequiereRevision
+		dataType: boolean
+		lineageTag: cb7bdfd6-da76-54c3-b440-79bdd25fa55d
+		summarizeBy: none
+		sourceColumn: RequiereRevision
+
+	column Activa
+		dataType: boolean
+		lineageTag: ca9ca8cf-bb76-5399-96f1-73dc7394b9ef
+		summarizeBy: none
+		sourceColumn: Activa
+
+	/// Fecha de corte de la base vigente (UTC).
+	column CorteUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 72ec8f1f-6d94-553e-a133-fbf9afac97a4
+		summarizeBy: none
+		sourceColumn: CorteUtc
+
+	partition vDeuda = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "vDeuda"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"PapeletaId", "TipoDoc", "DocumentoEnmascarado", "Placa", "ImporteOriginal", "Movimientos", "Saldo", "RequiereRevision", "Activa", "CorteUtc"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"PapeletaId", type text}, {"TipoDoc", type text}, {"DocumentoEnmascarado", type text}, {"Placa", type text}, {"ImporteOriginal", Currency.Type}, {"Movimientos", Currency.Type}, {"Saldo", Currency.Type}, {"RequiereRevision", type logical}, {"Activa", type logical}, {"CorteUtc", type datetime}})
+				in
+				    Tipos

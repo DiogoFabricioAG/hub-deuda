@@ -1,0 +1,98 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "int_barras_lotes",
+  "position": {
+    "x": 20,
+    "y": 480,
+    "z": 8000,
+    "height": 226,
+    "width": 760,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Area"
+                    }
+                  },
+                  "Property": "Nombre"
+                }
+              },
+              "queryRef": "Area.Nombre",
+              "nativeQueryRef": "Nombre",
+              "displayName": "Área",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Lotes"
+                }
+              },
+              "queryRef": "vLoteCalidad.Lotes",
+              "nativeQueryRef": "Lotes"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Estado"
+                }
+              },
+              "queryRef": "vLoteCalidad.Estado",
+              "nativeQueryRef": "Estado"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Lotes por área y estado'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

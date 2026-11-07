@@ -123,6 +123,10 @@ resource hubDb 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   properties: {
     useFreeLimit: true
     freeLimitExhaustionBehavior: 'AutoPause'
+    // Con oferta gratuita y freeLimitExhaustionBehavior=AutoPause, Azure solo
+    // admite el valor por defecto (60 min). La oferta da 100 000 vCore-segundos
+    // al mes (~55 h a 0.5 vCore): la Function no abre SQL sin trabajo para que
+    // la pausa ocurra.
     autoPauseDelay: 60
     minCapacity: json('0.5')
     requestedBackupStorageRedundancy: 'Local'
@@ -208,6 +212,7 @@ resource adf 'Microsoft.DataFactory/factories@2018-06-01' = {
 // ---------- Roles de datos (Contributor no concede acceso a datos) ----------
 var rolBlobReader = '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'   // Storage Blob Data Reader
 var rolBlobOwner = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'    // Storage Blob Data Owner
+var rolBlobContributor = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
 var rolKvSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
 
 resource funcLeeNegocio 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
@@ -215,6 +220,17 @@ resource funcLeeNegocio 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(negocio.id, func.id, rolBlobReader)
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', rolBlobReader)
+    principalId: func.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+// Escritura SOLO en el contenedor manifests: la Function marca en los metadatos
+// del manifiesto su estado (terminal / próximo reintento) para no consultar SQL.
+resource funcMarcaManifiestos 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: contenedores[1]
+  name: guid(contenedores[1].id, func.id, rolBlobContributor)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', rolBlobContributor)
     principalId: func.identity.principalId
     principalType: 'ServicePrincipal'
   }

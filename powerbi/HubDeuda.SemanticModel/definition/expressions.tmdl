@@ -1,0 +1,7 @@
+/// Servidor lógico de Azure SQL del hub. Autenticación Microsoft Entra (sin credenciales aquí).
+expression ServidorSQL = "sql-hubdeuda-dev-dg23ne.database.windows.net" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: f11143d8-a791-54a1-8fb2-85f453b0e6db
+
+/// Base de datos del hub.
+expression BaseSQL = "HubDeuda" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: fd291c3f-1e51-5b7b-a414-7b31a7ae6156

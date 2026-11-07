@@ -1,9 +1,15 @@
 """Acceso a los contenedores raw y manifests.
 
 En Azure usa Blob Storage con DefaultAzureCredential (identidad administrada
-de la Function con rol Storage Blob Data Reader). En pruebas locales usa una
-carpeta con la misma estructura: <raiz>/raw/... y <raiz>/manifests/...
+de la Function: lectura en la cuenta y escritura de metadatos en manifests).
+En pruebas locales usa una carpeta con la misma estructura: <raiz>/raw/... y
+<raiz>/manifests/... (los metadatos van en <raiz>/manifests/_meta/).
+
+Los metadatos del manifiesto (hd_estado, hd_proximo) permiten que la Function
+descarte lo ya procesado o en espera SIN consultar Azure SQL, para que la base
+serverless pueda pausarse cuando no hay trabajo.
 """
+import json
 import os
 from pathlib import Path, PurePosixPath
 
@@ -13,10 +19,22 @@ class AlmacenLocal:
         self.raiz = Path(raiz)
 
     def listar_manifiestos(self):
+        return [n for n, _ in self.listar_manifiestos_meta()]
+
+    def listar_manifiestos_meta(self):
         carpeta = self.raiz / "manifests"
         if not carpeta.exists():
             return []
-        return sorted(p.name for p in carpeta.glob("*.json"))
+        res = []
+        for p in sorted(carpeta.glob("*.json")):
+            meta = carpeta / "_meta" / p.name
+            res.append((p.name, json.loads(meta.read_text(encoding="utf-8")) if meta.exists() else {}))
+        return res
+
+    def fijar_metadatos(self, nombre, meta):
+        p = self.raiz / "manifests" / "_meta" / _seguro(nombre)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(meta), encoding="utf-8")
 
     def leer_manifiesto(self, nombre):
         return (self.raiz / "manifests" / _seguro(nombre)).read_bytes()
@@ -36,8 +54,15 @@ class AlmacenBlob:
         self.svc = BlobServiceClient(url, credential=DefaultAzureCredential())
 
     def listar_manifiestos(self):
+        return [n for n, _ in self.listar_manifiestos_meta()]
+
+    def listar_manifiestos_meta(self):
         c = self.svc.get_container_client("manifests")
-        return sorted(b.name for b in c.list_blobs() if b.name.endswith(".json"))
+        return sorted((b.name, dict(b.metadata or {})) for b in c.list_blobs(include=["metadata"])
+                      if b.name.endswith(".json"))
+
+    def fijar_metadatos(self, nombre, meta):
+        self.svc.get_blob_client("manifests", nombre).set_blob_metadata(meta)
 
     def leer_manifiesto(self, nombre):
         return self.svc.get_blob_client("manifests", nombre).download_blob().readall()

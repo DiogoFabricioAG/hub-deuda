@@ -1,0 +1,15 @@
+relationship 6e1f0c85-73d2-549b-9079-607f1636b45b
+	fromColumn: vMovimientoDetalle.AreaId
+	toColumn: Area.AreaId
+
+relationship fa35344f-8046-5a21-8727-3864a21fd5a7
+	fromColumn: vLoteCalidad.AreaId
+	toColumn: Area.AreaId
+
+relationship 0b3611b9-599d-5625-8c09-79fca94cad0b
+	fromColumn: vObservacionCalidad.AreaId
+	toColumn: Area.AreaId
+
+relationship 681e743f-8d44-5a53-9c6d-3a28804987f2
+	fromColumn: vMovimientoDetalle.PapeletaId
+	toColumn: vDeuda.PapeletaId

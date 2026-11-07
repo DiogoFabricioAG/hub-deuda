@@ -1,0 +1,100 @@
+/// Movimientos vigentes por área (dbo.vMovimientoDetalle).
+table vMovimientoDetalle
+	lineageTag: d6ca8284-0c5b-5c91-ac05-705f0d5a7686
+
+	/// Movimientos vigentes (lotes publicados).
+	measure CantidadMovimientos = COUNTROWS(vMovimientoDetalle)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: 914740d4-daf5-5343-ad02-ebff573df852
+
+	/// Suma de montos de movimientos vigentes (sin signo).
+	measure MontoMovimientos = SUM(vMovimientoDetalle[Monto])
+		formatString: #,0.00
+		displayFolder: Métricas de carga
+		lineageTag: 1b94950e-121b-5233-b2d5-eb6f13ce806e
+
+	column PapeletaId
+		dataType: string
+		lineageTag: 4d1b42d3-986a-5fbf-a000-5c6a8897148e
+		summarizeBy: none
+		sourceColumn: PapeletaId
+
+	column AreaId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: b797bf57-2c78-5a42-b6c5-04cc0c9135ba
+		summarizeBy: none
+		sourceColumn: AreaId
+
+	column Area
+		dataType: string
+		lineageTag: f772a545-df39-52d3-bc35-dccc89067b92
+		summarizeBy: none
+		sourceColumn: Area
+		sortByColumn: AreaId
+
+	column MovimientoId
+		dataType: string
+		lineageTag: 15522e84-12b0-5cd3-80ae-08e305b84561
+		summarizeBy: none
+		sourceColumn: MovimientoId
+
+	column Tipo
+		dataType: string
+		lineageTag: c2e74ec4-bbc3-59ff-978d-4c64d9f62f29
+		summarizeBy: none
+		sourceColumn: Tipo
+
+	column Monto
+		dataType: decimal
+		formatString: #,0.00
+		lineageTag: 81345af6-c392-5092-8e7e-bea08f65aaec
+		summarizeBy: sum
+		sourceColumn: Monto
+
+	column Estado
+		dataType: string
+		lineageTag: 97042286-dc4f-57d0-9620-96af30c7d79c
+		summarizeBy: none
+		sourceColumn: Estado
+
+	column FechaEvento
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 65bda63c-3a82-595e-8412-7e282691ada3
+		summarizeBy: none
+		sourceColumn: FechaEvento
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Referencia
+		dataType: string
+		lineageTag: 1bcf9881-5a78-5037-ad5c-4297dc488cc8
+		summarizeBy: none
+		sourceColumn: Referencia
+
+	column LoteId
+		dataType: string
+		lineageTag: bdbaae01-1085-5e02-aaba-c9abebe35ba2
+		summarizeBy: none
+		sourceColumn: LoteId
+
+	column PublicadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 77e114a9-ce7e-50c9-a863-1ae00997ba6c
+		summarizeBy: none
+		sourceColumn: PublicadoUtc
+
+	partition vMovimientoDetalle = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "vMovimientoDetalle"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"PapeletaId", "AreaId", "Area", "MovimientoId", "Tipo", "Monto", "Estado", "FechaEvento", "Referencia", "LoteId", "PublicadoUtc"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"PapeletaId", type text}, {"AreaId", Int64.Type}, {"Area", type text}, {"MovimientoId", type text}, {"Tipo", type text}, {"Monto", Currency.Type}, {"Estado", type text}, {"FechaEvento", type date}, {"Referencia", type text}, {"LoteId", type text}, {"PublicadoUtc", type datetime}})
+				in
+				    Tipos

@@ -1,0 +1,166 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_tabla_lotes",
+  "position": {
+    "x": 660,
+    "y": 196,
+    "z": 10000,
+    "height": 260,
+    "width": 600,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Area"
+                }
+              },
+              "queryRef": "vLoteCalidad.Area",
+              "nativeQueryRef": "Area",
+              "displayName": "Área"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Estado"
+                }
+              },
+              "queryRef": "vLoteCalidad.Estado",
+              "nativeQueryRef": "Estado"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "CreadoUtc"
+                }
+              },
+              "queryRef": "vLoteCalidad.CreadoUtc",
+              "nativeQueryRef": "CreadoUtc",
+              "displayName": "Creado (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "FilasLeidas"
+                }
+              },
+              "queryRef": "vLoteCalidad.FilasLeidas",
+              "nativeQueryRef": "FilasLeidas",
+              "displayName": "Filas leídas"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "FilasConError"
+                }
+              },
+              "queryRef": "vLoteCalidad.FilasConError",
+              "nativeQueryRef": "FilasConError",
+              "displayName": "Filas con error"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Errores"
+                }
+              },
+              "queryRef": "vLoteCalidad.Errores",
+              "nativeQueryRef": "Errores"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "LoteId"
+                }
+              },
+              "queryRef": "vLoteCalidad.LoteId",
+              "nativeQueryRef": "LoteId",
+              "displayName": "Lote"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "vLoteCalidad"
+                  }
+                },
+                "Property": "CreadoUtc"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Lotes y resultado de validación (UTC)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

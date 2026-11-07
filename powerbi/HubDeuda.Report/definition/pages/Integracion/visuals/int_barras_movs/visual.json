@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "int_barras_movs",
+  "position": {
+    "x": 800,
+    "y": 480,
+    "z": 9000,
+    "height": 226,
+    "width": 460,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Area"
+                    }
+                  },
+                  "Property": "Nombre"
+                }
+              },
+              "queryRef": "Area.Nombre",
+              "nativeQueryRef": "Nombre",
+              "displayName": "Área",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vMovimientoDetalle"
+                    }
+                  },
+                  "Property": "CantidadMovimientos"
+                }
+              },
+              "queryRef": "vMovimientoDetalle.CantidadMovimientos",
+              "nativeQueryRef": "CantidadMovimientos",
+              "displayName": "Movimientos"
+            }
+          ]
+        },
+        "Series": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vMovimientoDetalle"
+                    }
+                  },
+                  "Property": "Tipo"
+                }
+              },
+              "queryRef": "vMovimientoDetalle.Tipo",
+              "nativeQueryRef": "Tipo"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Movimientos vigentes por área y tipo'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

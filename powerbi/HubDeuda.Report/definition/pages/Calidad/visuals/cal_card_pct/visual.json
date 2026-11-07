@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_card_pct",
+  "position": {
+    "x": 260,
+    "y": 72,
+    "z": 4000,
+    "height": 110,
+    "width": 225,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "PorcentajeFilasObservadas"
+                }
+              },
+              "queryRef": "vLoteCalidad.PorcentajeFilasObservadas",
+              "nativeQueryRef": "PorcentajeFilasObservadas",
+              "displayName": "% filas observadas"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

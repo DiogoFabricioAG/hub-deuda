@@ -1,0 +1,49 @@
+/// Dimensión de áreas (dbo.Area, AreaId 1..10).
+table Area
+	lineageTag: 3b201c26-5ce1-5c1f-8d15-5676d94c4252
+
+	/// Áreas que tienen un lote vigente publicado.
+	measure AreasConCargaVigente = COALESCE(COUNTROWS(FILTER(Area, NOT ISBLANK(Area[LoteVigente]))), 0)
+		formatString: 0
+		displayFolder: Métricas de carga
+		lineageTag: 31e24d48-01cd-505d-8323-bb8e567a5515
+
+	column AreaId
+		dataType: int64
+		formatString: 0
+		lineageTag: 8dbd7c03-aa09-5d3a-90cf-c83ac05c51ae
+		summarizeBy: none
+		sourceColumn: AreaId
+
+	/// Nombre del área.
+	column Nombre
+		dataType: string
+		lineageTag: 109664c6-4bb8-5e01-bb05-392ea8c0705e
+		summarizeBy: none
+		sourceColumn: Nombre
+		sortByColumn: AreaId
+
+	column TipoPermitido
+		dataType: string
+		lineageTag: 09ca3f3c-2316-5fd9-9eb5-dbc211fe8cfc
+		summarizeBy: none
+		sourceColumn: TipoPermitido
+
+	/// Lote publicado vigente del área (vacío si no tiene carga).
+	column LoteVigente
+		dataType: string
+		isHidden
+		lineageTag: aed0d168-225c-569f-85c5-566dbddff479
+		summarizeBy: none
+		sourceColumn: LoteVigente
+
+	partition Area = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "Area"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"AreaId", "Nombre", "TipoPermitido", "LoteVigente"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"AreaId", Int64.Type}, {"Nombre", type text}, {"TipoPermitido", type text}, {"LoteVigente", type text}})
+				in
+				    Tipos

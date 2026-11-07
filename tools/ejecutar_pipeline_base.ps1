@@ -1,4 +1,4 @@
-<#
+﻿<#
 Ejecuta pl_base_completa en Data Factory, espera el resultado y muestra el
 detalle de cada actividad (8.6: primero una ejecución manual exitosa).
 
@@ -36,7 +36,8 @@ az rest --method post --url "$base/pipelineruns/$run/queryActivityruns?$api" --b
 Remove-Item $cuerpo.FullName
 
 if ($estado -eq 'Succeeded' -and $ActivarDisparador) {
-  az rest --method post --url "$base/triggers/tr_cada_hora/start?$api" -o none
-  Write-Host 'Disparador tr_cada_hora ACTIVADO (cada hora, zona Lima).'
+  az rest --method post --url "$base/triggers/tr_base_programada/start?$api" -o none
+  Write-Host 'Disparador tr_base_programada ACTIVADO (12:55 y 17:55, hora de Lima).'
 }
 Write-Host "Resultado: $estado (RunId $run = CargaId en dbo.BaseCarga)"
+

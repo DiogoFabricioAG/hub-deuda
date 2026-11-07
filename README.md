@@ -2,8 +2,11 @@
 
 Implementación de la *Guía de implementación de la integración de datos* (SI806U, UNI) a partir del informe `ENTREGRABLE FINAL.docx`. Integra la deuda base de un SQL Server local con los Excel de diez áreas y publica una deuda consolidada en Azure SQL. **Todos los datos son ficticios.**
 
+- **Documento técnico** (cómo está construido, paso a paso, pendientes y enlaces): [docs/DOCUMENTO_TECNICO.md](docs/DOCUMENTO_TECNICO.md)
+- **Casos de uso** (CU01–CU11 y cómo se implementa cada uno): [docs/CASOS_DE_USO.md](docs/CASOS_DE_USO.md)
 - Accesos y licencias necesarios: [docs/ACCESOS.md](docs/ACCESOS.md)
 - Arquitectura (PC, nube de Microsoft y VPS): [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md)
+- Diccionario de datos, permisos, decisiones y pruebas: [docs/DICCIONARIO_DATOS.md](docs/DICCIONARIO_DATOS.md), [docs/MATRIZ_PERMISOS.md](docs/MATRIZ_PERMISOS.md), [docs/DECISIONES.md](docs/DECISIONES.md), [docs/PRUEBAS.md](docs/PRUEBAS.md)
 
 ## Estructura
 
@@ -12,7 +15,7 @@ Implementación de la *Guía de implementación de la integración de datos* (SI
 | `sql/hub` | Migraciones del hub: esquema, vistas, procedimientos de publicación, roles | Probado en SQL Express |
 | `sql/origen` | Base on-premise simulada `BDOrigen` | Probado en SQL Express |
 | `functions` | Azure Function Python v2: validador, persistencia idempotente, timer | Probado localmente |
-| `tests` | Pruebas T01–T12 y casos de calidad (pytest) | 12/12 aprobadas |
+| `tests` | Pruebas T01–T12, calidad y permisos mínimos (pytest) | 14/14 aprobadas |
 | `tools` | Migraciones, carga base local (simula ADF), generador de plantillas | — |
 | `powerplatform/plantillas` | 10 libros `movimientos.xlsx` (tabla `tblMovimientos`) | Generados |
 | `infra`, `adf`, `powerplatform`, `powerbi` | Bicep, pipeline ADF, solución Power Platform, modelo Power BI | Pendiente de accesos |

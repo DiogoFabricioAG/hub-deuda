@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "int_card_lotes",
+  "position": {
+    "x": 340,
+    "y": 72,
+    "z": 4000,
+    "height": 110,
+    "width": 300,
+    "tabOrder": 4000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Lotes"
+                }
+              },
+              "queryRef": "vLoteCalidad.Lotes",
+              "nativeQueryRef": "Lotes",
+              "displayName": "Lotes recibidos"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

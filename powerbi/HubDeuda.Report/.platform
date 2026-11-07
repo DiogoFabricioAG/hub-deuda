@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Report",
+    "displayName": "HubDeuda"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "bd97e6ea-0376-5b0d-95da-d88e1209cbc8"
+  }
+}

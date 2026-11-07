@@ -99,6 +99,7 @@ def test_t11_caida_antes_y_despues_del_commit(hub):
     # Vence la espera: el siguiente intento completa la operación una sola vez
     hub.sql("UPDATE dbo.ProcesoManifiesto SET ProximoIntentoUtc=NULL "
             "OUTPUT inserted.Manifiesto WHERE LoteId=?", lote)
+    hub.almacen.fijar_metadatos(f"{lote}.json", {})   # la espera también vive en el blob
     hub.procesar()
     assert hub.estado(lote) == "ACEPTADO" and hub.saldo() == D("70.00")
 

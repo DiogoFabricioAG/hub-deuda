@@ -44,4 +44,4 @@ foreach ($paso in $orden) {
   }
 }
 Remove-Item $tmp -Recurse -Force
-Write-Host "Data Factory $factory lista. El disparador tr_cada_hora sigue detenido."
+Write-Host "Data Factory $factory lista. Los disparadores quedan detenidos hasta activarlos con ejecutar_pipeline_base.ps1 -ActivarDisparador."

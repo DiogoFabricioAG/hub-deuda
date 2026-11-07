@@ -1,0 +1,118 @@
+/// Lotes con métricas de calidad (dbo.vLoteCalidad). FilasConError = filas distintas con error.
+table vLoteCalidad
+	lineageTag: 83ed9f13-2ea9-5f19-9f2e-c14b9674822d
+
+	/// Lotes recibidos.
+	measure Lotes = COUNTROWS(vLoteCalidad)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: a71828bf-6a3f-5aa0-afeb-cf356f064689
+
+	/// Lotes con Estado = ACEPTADO.
+	measure LotesAceptados = COALESCE(CALCULATE(COUNTROWS(vLoteCalidad), vLoteCalidad[Estado] = "ACEPTADO"), 0)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: b4a58862-1950-540c-ab39-29082276acf5
+
+	/// Lotes con Estado = RECHAZADO.
+	measure LotesRechazados = COALESCE(CALCULATE(COUNTROWS(vLoteCalidad), vLoteCalidad[Estado] = "RECHAZADO"), 0)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: 2d48cd12-a918-5c13-8e81-2a43670c7eb4
+
+	/// Filas distintas con error / filas leídas (no cuenta errores).
+	measure PorcentajeFilasObservadas = DIVIDE(SUM(vLoteCalidad[FilasConError]), SUM(vLoteCalidad[FilasLeidas]))
+		formatString: 0.00%
+		displayFolder: Métricas de carga
+		lineageTag: 955758f2-c584-56c6-b15b-8fc2e37287bc
+
+	column LoteId
+		dataType: string
+		lineageTag: 7dc07c57-7950-54a5-be6c-ff5dadea9d69
+		summarizeBy: none
+		sourceColumn: LoteId
+
+	column AreaId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 22d9fe3d-9789-5755-97f4-d06699048b92
+		summarizeBy: none
+		sourceColumn: AreaId
+
+	column Area
+		dataType: string
+		lineageTag: 45c621f7-6963-5792-ab9b-f13391ecd9f0
+		summarizeBy: none
+		sourceColumn: Area
+		sortByColumn: AreaId
+
+	column Estado
+		dataType: string
+		lineageTag: 7529cfa3-51b7-5cf9-acb6-a6664cf7fafd
+		summarizeBy: none
+		sourceColumn: Estado
+
+	column FilasLeidas
+		dataType: int64
+		formatString: #,0
+		lineageTag: 43759864-9c55-5346-935a-fa2cfe22555b
+		summarizeBy: none
+		sourceColumn: FilasLeidas
+
+	column CreadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 1b5c2582-39e9-5b3f-ac01-240f26f89820
+		summarizeBy: none
+		sourceColumn: CreadoUtc
+
+	column PublicadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: d9344b72-4071-51ce-9bbd-9cb30e5f199e
+		summarizeBy: none
+		sourceColumn: PublicadoUtc
+
+	column SegundosPublicacion
+		dataType: int64
+		formatString: #,0
+		lineageTag: e2c8a343-895b-55b2-b5df-f041b1741945
+		summarizeBy: none
+		sourceColumn: SegundosPublicacion
+
+	column Errores
+		dataType: int64
+		formatString: #,0
+		lineageTag: 72a44769-2ec8-584f-a3d1-b024fa20803d
+		summarizeBy: none
+		sourceColumn: Errores
+
+	column FilasConError
+		dataType: int64
+		formatString: #,0
+		lineageTag: 0577b406-63f2-5421-9628-b8419cf3b34d
+		summarizeBy: none
+		sourceColumn: FilasConError
+
+	/// Fecha (UTC) de CreadoUtc, para la evolución diaria.
+	column FechaCreadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: a41d7d49-4cc4-549f-bf12-474cbd7c02f7
+		summarizeBy: none
+		sourceColumn: FechaCreadoUtc
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition vLoteCalidad = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "vLoteCalidad"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"LoteId", "AreaId", "Area", "Estado", "FilasLeidas", "CreadoUtc", "PublicadoUtc", "SegundosPublicacion", "Errores", "FilasConError"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"LoteId", type text}, {"AreaId", Int64.Type}, {"Area", type text}, {"Estado", type text}, {"FilasLeidas", Int64.Type}, {"CreadoUtc", type datetime}, {"PublicadoUtc", type datetime}, {"SegundosPublicacion", Int64.Type}, {"Errores", Int64.Type}, {"FilasConError", Int64.Type}}),
+				    ConFecha = Table.AddColumn(Tipos, "FechaCreadoUtc", each DateTime.Date([CreadoUtc]), type date)
+				in
+				    ConFecha

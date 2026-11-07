@@ -43,16 +43,16 @@ flowchart LR
       OUT["Outlook / Teams"]:::ms
     end
     subgraph PP["Power Platform · entorno Developer · solución HubDeuda"]
-      PA_COPIA["Power Automate<br/>fl_copia_programada 13:00 y 18:00 (Lima)<br/>fl_cargar_area («Cargar ahora»)"]:::ms
+      PA_COPIA["Power Automate<br/>fl_copia_programada 13:00 y 18:00 (Lima)<br/>fl_cargar_ahora («Cargar ahora»)<br/>→ hijo fl_copia_area"]:::ms
       PA_AVISOS["Flujo de avisos"]:::ms
       PA_REP["fl_reporte_deuda<br/>plantilla Word → PDF"]:::ms
       APPS["Power Apps<br/>ConsultaDeuda · Mis observaciones"]:::ms
     end
-    subgraph AZ["Azure · rg-hubdeuda-dev · Azure for Students"]
+    subgraph AZ["Azure · rg-hubdeuda-dev · brazilsouth · pago por uso"]
       BLOB["Storage de negocio<br/>raw · manifests · reports"]:::ms
       FUNC["Function App Python<br/>timer cada minuto · valida · SHA-256<br/>publicación atómica (sp_getapplock)"]:::ms
       SQL[("Azure SQL Database HubDeuda<br/>tablas: Area, BaseCarga/BaseFila/BaseActual,<br/>Lote, Movimiento, Observacion, Notificacion<br/>vistas: vDeuda, vEstadoFuentes, vMovimientoDetalle,<br/>vObservaciones01..10<br/>usp_PublicarBase · usp_PublicarArea")]:::ms
-      ADF["Azure Data Factory<br/>pl_base_completa cada hora"]:::ms
+      ADF["Azure Data Factory<br/>pl_base_completa 12:55 y 17:55"]:::ms
       KV["Key Vault<br/>secreto del lector de BDOrigen"]:::ms
       FSTO["Storage del runtime de Functions"]:::ms
       MON["Application Insights / Log Analytics"]:::ms
@@ -67,7 +67,7 @@ flowchart LR
     SHIR["Self-hosted Integration Runtime<br/>solo Windows · saliente 443"]:::pc
     REPO["Repositorio Git D:\hub-deuda-azure<br/>Azure CLI · Functions Core Tools · pac · CLI M365"]:::pc
     PBID["Power BI Desktop"]:::pc
-    PC_LIM["LIMITANTE: el PC debe estar encendido<br/>y sin suspensión en la carga horaria"]:::limite
+    PC_LIM["LIMITANTE: el PC debe estar encendido<br/>y sin suspensión en las cargas de la base"]:::limite
   end
 
   subgraph VPS["VPS meowlab · Ubuntu + Docker · fuera de la arquitectura Azure"]
@@ -87,7 +87,7 @@ flowchart LR
   SQLEX -->|"4 lee BDOrigen"| SHIR
   SHIR -->|"4 HTTPS 443 saliente (control)"| ADF
   SHIR -->|"4 escribe BaseFila por 1433"| SQL
-  ADF -->|"4 usp_PublicarBase cada hora"| SQL
+  ADF -->|"4 usp_PublicarBase 12:55 y 17:55"| SQL
   KV -.->|"secreto"| ADF
   SQL -->|"5 vDeuda · vObservaciones01..10"| APPS
   SQL -->|"6 vistas"| PBI
@@ -122,15 +122,32 @@ flowchart LR
 
 ## 2. Qué corre dónde
 
+**Recursos reales desplegados (7 nov 2026).** Suscripción de pago por uso de la cuenta UNI (no había Azure for Students), región `brazilsouth`. Detalle de cada elección en [DECISIONES.md](DECISIONES.md).
+
+| Componente | Nombre real |
+|---|---|
+| Grupo de recursos | `rg-hubdeuda-dev` |
+| Azure SQL | Servidor `sql-hubdeuda-dev-dg23ne` (solo Entra), base `HubDeuda` (serverless `GP_S_Gen5_2`, oferta gratuita con autopausa) |
+| Function App | `func-hubdeuda-dev-dg23ne` (Linux, Python 3.12, Flex Consumption, plan `asp-hubdeuda-dev`) |
+| Data Factory | `adf-hubdeuda-dev-dg23ne`, runtime autohospedado `ir-onpremise`, pipeline `pl_base_completa`, disparador `tr_base_programada` 12:55 y 17:55 (se crea detenido) |
+| Key Vault | `kv-hubdeuda-dg23ne` (RBAC), secreto `bdorigen-lector` |
+| Storage de negocio | `sthubdeudadevdg23ne` (`raw`, `manifests`, `reports`) |
+| Storage del runtime | `sthubfuncdevdg23ne` (sin claves compartidas) |
+| Monitoreo | `appi-hubdeuda-dev` sobre `log-hubdeuda-dev` |
+| SharePoint | `https://unipe.sharepoint.com/sites/IntegracionDeuda` |
+| Power Platform | Entorno Developer `https://org2535ee74.crm2.dynamics.com/`, solución `HubDeuda` (prefijo `hd`) |
+
+Tablas, vistas, estados y códigos: [DICCIONARIO_DATOS.md](DICCIONARIO_DATOS.md). Permisos: [MATRIZ_PERMISOS.md](MATRIZ_PERMISOS.md). Pruebas: [PRUEBAS.md](PRUEBAS.md).
+
 | Infraestructura | Componente | Tipo | Qué hace en el hub | Flujos |
 |---|---|---|---|---|
 | Nube de Microsoft · Microsoft 365 | SharePoint `IntegracionDeuda`, biblioteca **Entradas** (`Area01..Area10/movimientos.xlsx`, tabla `tblMovimientos`) | SaaS | Cada área registra sus movimientos en su Excel | 1, 2 |
 | Nube de Microsoft · Microsoft 365 | Lista `ConfigAreas` | SaaS | Configuración de las áreas | — |
 | Nube de Microsoft · Microsoft 365 | Bibliotecas **Plantillas**, **Reportes** y **Evidencias** | SaaS | Plantilla Word, PDF generados y evidencias de pruebas | 8 |
 | Nube de Microsoft · Microsoft 365 | Outlook / Teams | SaaS | Reciben los avisos | 7 |
-| Nube de Microsoft · Power Platform | Power Automate `fl_copia_programada` (13:00 y 18:00, hora de Lima) y `fl_cargar_area` (botón «Cargar ahora») | SaaS | Copian el Excel original a Blob `raw` y **después** escriben el manifiesto JSON | 2 |
-| Nube de Microsoft · Power Platform | Flujo de avisos | SaaS | Lee `dbo.Notificacion` y avisa por Outlook/Teams | 7 |
-| Nube de Microsoft · Power Platform | `fl_reporte_deuda` | SaaS | Plantilla Word → PDF en la biblioteca Reportes | 8 |
+| Nube de Microsoft · Power Platform | Power Automate `fl_copia_programada` (13:00 y 18:00, hora de Lima) y `fl_cargar_ahora` (botón «Cargar ahora», verifica `ResponsableUPN`); ambos llaman al flujo hijo `fl_copia_area` | SaaS | El hijo copia el Excel original a Blob `raw` y **después** escribe el manifiesto JSON | 2 |
+| Nube de Microsoft · Power Platform | Flujo de avisos (**pendiente de construir**) | SaaS | Lee `dbo.Notificacion` y avisa por Outlook/Teams | 7 |
+| Nube de Microsoft · Power Platform | `fl_reporte_deuda` (**pendiente de construir**) | SaaS | Plantilla Word → PDF en la biblioteca Reportes | 8 |
 | Nube de Microsoft · Power Platform | Power Apps `ConsultaDeuda` | SaaS | Busca por DNI/RUC, placa o papeleta sobre `vDeuda` | 5 |
 | Nube de Microsoft · Power Platform | Power Apps «Mis observaciones» | SaaS | Cada área ve su vista `vObservaciones01..10` | 5 |
 | Nube de Microsoft · Power Platform | Conectores Premium SQL Server y Azure Blob | SaaS | Enlazan flujos y apps con Azure | 2, 5, 7, 8 |
@@ -138,14 +155,14 @@ flowchart LR
 | Nube de Microsoft · Azure | Storage del runtime de Functions | PaaS | Estado interno del host de Functions | — |
 | Nube de Microsoft · Azure | Function App Python | PaaS | Timer cada minuto: lee manifiestos, valida el Excel, calcula SHA-256 y publica de forma atómica con `sp_getapplock` | 3 |
 | Nube de Microsoft · Azure | Azure SQL Database `HubDeuda` | PaaS | Tablas `Area`, `BaseCarga`/`BaseFila`/`BaseActual`, `Lote`, `Movimiento`, `Observacion`, `Notificacion`; vistas `vDeuda`, `vEstadoFuentes`, `vMovimientoDetalle`, `vObservaciones01..10`; procedimientos `usp_PublicarBase` y `usp_PublicarArea` | 3–8 |
-| Nube de Microsoft · Azure | Azure Data Factory, pipeline `pl_base_completa` | PaaS | Cada hora coordina la copia de `BDOrigen` vía SHIR y publica la deuda base | 4 |
+| Nube de Microsoft · Azure | Azure Data Factory, pipeline `pl_base_completa` | PaaS | A las 12:55 y 17:55 coordina la copia de `BDOrigen` vía SHIR y publica la deuda base | 4 |
 | Nube de Microsoft · Azure | Key Vault | PaaS | Guarda el secreto del lector de `BDOrigen` | 4 |
 | Nube de Microsoft · Azure | Application Insights / Log Analytics | PaaS | Telemetría y registros | — |
 | Nube de Microsoft · Azure | Entra ID | SaaS | Identidades de usuarios e identidades administradas | — |
 | Nube de Microsoft | Power BI Service | SaaS | Tablero Resumen, Integración y Calidad | 6, 9 |
 | PC Windows 11 | SQL Server Express `localhost\SQLEXPRESS`, `BDOrigen.dbo.DeudaOrigen` | Local | Origen simulado con 3 deudas ficticias (P0001 = 100, P0002 = 250, P0003 = 80). Ya instalado y probado | 4 |
-| PC Windows 11 | Self-hosted Integration Runtime (SHIR) | Servicio de Windows | Conexión **saliente** HTTPS 443 hacia ADF; escribe en Azure SQL por 1433. No publica el SQL local en Internet | 4 |
-| PC Windows 11 | Repositorio Git `D:\hub-deuda-azure` (`sql/`, `functions/`, `adf/`, `powerplatform/`, `powerbi/`, `tests/`) | Archivos | Código del hub y pruebas locales del núcleo contra SQL Express | 9 |
+| PC Windows 11 | Self-hosted Integration Runtime (SHIR), nodo del runtime `ir-onpremise` (**pendiente de instalar**; mientras tanto la base se publica con `tools/cargar_base_directa_azure.py`) | Servicio de Windows | Conexión **saliente** HTTPS 443 hacia ADF; escribe en Azure SQL por 1433. No publica el SQL local en Internet | 4 |
+| PC Windows 11 | Repositorio Git `D:\hub-deuda-azure` (`sql/`, `functions/`, `adf/`, `powerplatform/`, `tests/`, `tools/`, `infra/`, `docs/`; `powerbi/` pendiente) | Archivos | Código del hub y pruebas locales del núcleo contra SQL Express | 9 |
 | PC Windows 11 | Azure CLI, Azure Functions Core Tools, Power Platform CLI (`pac`), CLI for Microsoft 365 | Herramientas | Despliegue con la sesión UNI del usuario; no se comparten contraseñas | 9 |
 | PC Windows 11 | Power BI Desktop | Escritorio | Construye el modelo y lo publica en Power BI Service | 9 |
 | VPS meowlab | Caddy (contenedor `facturaya-ai-caddy-1`) | Contenedor | HTTPS de `meowlab.tech`; `/debt-hub/` → nginx y `/debt-hub/api/*` → API | 10 |
@@ -161,10 +178,11 @@ flowchart LR
 | **Power Platform no se puede instalar en el VPS** (ni en ningún servidor propio) | Power Apps y Power Automate son SaaS: Microsoft los ejecuta en su nube y cada app o flujo pertenece a un entorno del tenant UNI | Todo lo de Power Platform vive en la nube de Microsoft. El VPS no participa en el hub |
 | **Power BI Service tampoco** | También es SaaS. Publicar en un workspace compartido requiere Pro, PPU o Fabric; con licencia gratuita solo existe «Mi área de trabajo» | El modelo se construye en Power BI Desktop (PC) y se publica en «Mi área de trabajo» para demostrar, no para compartir |
 | **El SHIR no puede ir en el VPS** | El Self-hosted Integration Runtime solo existe para Windows y el VPS es Ubuntu | El SHIR se instala en el PC, junto a SQL Server Express |
-| **El PC debe estar encendido** durante las cargas horarias | El SHIR y `BDOrigen` viven en el PC; si se apaga o suspende, ADF no puede leer el origen | La carga de esa hora falla sin dañar nada: la última base válida sigue publicada y `vEstadoFuentes` muestra el corte atrasado (pruebas T13/T14) |
+| **El PC debe estar encendido** durante las cargas de la base (12:55 y 17:55) | El SHIR y `BDOrigen` viven en el PC; si se apaga o suspende, ADF no puede leer el origen | Esa carga falla sin dañar nada: la última base válida sigue publicada y `vEstadoFuentes` muestra el corte atrasado (pruebas T13/T14) |
 | **El SQL local nunca se expone a Internet** | El SHIR inicia conexiones **salientes** (HTTPS 443 hacia ADF y 1433 hacia Azure SQL); no se abren puertos de entrada en el PC | La red del PC debe permitir la salida por 443 y 1433 |
 | **Developer Plan: solo el dueño ejecuta lo Premium** | El plan gratuito es individual; los conectores SQL Server y Azure Blob son Premium | Alcanza para construir y presentar. Cada integrante que quiera usar las apps necesita su propio Developer Plan o una licencia |
-| **Azure for Students limita regiones y presupuesto** | La suscripción tiene una política de regiones permitidas y un crédito de unos USD 100 | Se despliega en una región permitida, con alertas de presupuesto; al terminar el curso se apagan disparadores y se elimina `rg-hubdeuda-dev` |
+| **Suscripción de pago por uso** (la cuenta UNI no tenía Azure for Students) | Los cargos son reales y van a la tarjeta; no hay crédito ni política de regiones | Región `brazilsouth`, presupuesto de USD 20 al mes con alertas al 50/80/100 % (no detienen recursos). Al terminar el curso se apagan disparadores y se elimina `rg-hubdeuda-dev` |
+| **Sin red privada en el laboratorio** | La Function (Flex Consumption sin red virtual) y los conectores de Power Platform no tienen IP de salida fija; la IP del PC es dinámica | El firewall de Azure SQL usa «Permitir servicios de Azure» más la regla `PcOnPremise` (`tools/actualizar_ip_pc.ps1`); la protección recae en la autenticación solo con Entra y en los roles mínimos |
 | **El VPS no está conectado al hub** | Es un prototipo de demostración con datos sintéticos y está fuera del tenant UNI | Su información no es la del hub. Conectarlo es solo una opción futura (ver abajo) |
 
 **Opción futura (no planificada):** el prototipo del VPS podría consumir, en **solo lectura**, una API o vistas del hub en Azure. Necesitaría autenticación (por ejemplo, una identidad propia con permisos mínimos) y no se implementa ahora. En el diagrama aparece como flecha punteada gris marcada «opcional».
@@ -172,13 +190,13 @@ flowchart LR
 ## 4. Flujos de datos numerados
 
 1. **Registro.** Las personas de cada área (01–10) editan `movimientos.xlsx` (tabla `tblMovimientos`) en su carpeta de la biblioteca **Entradas** de SharePoint.
-2. **Copia y manifiesto.** Power Automate (`fl_copia_programada` a las 13:00 y 18:00 hora de Lima, o `fl_cargar_area` con el botón «Cargar ahora») copia el Excel original al contenedor `raw` de Blob y, después, escribe `manifests/‹LoteId›.json`.
+2. **Copia y manifiesto.** Power Automate (`fl_copia_programada` a las 13:00 y 18:00 hora de Lima, o `fl_cargar_ahora` con el botón «Cargar ahora») llama al flujo hijo `fl_copia_area`, que copia el Excel original al contenedor `raw` de Blob y, después, escribe `manifests/‹LoteId›.json`.
 3. **Validación y publicación por área.** La Azure Function (timer cada minuto) lee el manifiesto y el archivo de `raw`, valida el Excel, calcula SHA-256 y publica de forma atómica en Azure SQL (`sp_getapplock` + `usp_PublicarArea`). Si el archivo tiene errores, registra `Observacion` y deja el aviso en `Notificacion`.
-4. **Deuda base desde el on-premise.** Cada hora, ADF (`pl_base_completa`) coordina la carga: el SHIR del PC mantiene una conexión saliente HTTPS 443 con ADF, lee `BDOrigen` en SQL Server Express, escribe la fotografía en `BaseFila` de Azure SQL por 1433 y ADF publica con `usp_PublicarBase`. La credencial del lector de `BDOrigen` sale de Key Vault.
+4. **Deuda base desde el on-premise.** A las 12:55 y 17:55 de Lima (la guía propone cada hora; se redujo para que Azure SQL pueda pausarse), ADF (`pl_base_completa`) coordina la carga: el SHIR del PC mantiene una conexión saliente HTTPS 443 con ADF, lee `BDOrigen` en SQL Server Express, escribe la fotografía en `BaseFila` de Azure SQL por 1433 y ADF publica con `usp_PublicarBase`. La credencial del lector de `BDOrigen` sale de Key Vault. *Estado al 7 nov 2026:* el SHIR aún no está instalado; la base se publicó con `tools/cargar_base_directa_azure.py`, que usa los mismos procedimientos sin pasar por el SHIR (decisión D14).
 5. **Consulta.** Power Apps lee Azure SQL con el conector SQL Server: `ConsultaDeuda` busca por DNI/RUC, placa o papeleta en `vDeuda`; «Mis observaciones» muestra `vObservaciones01..10` (cada área solo la suya).
 6. **Tablero.** Power BI Service lee las vistas del hub para las páginas Resumen, Integración y Calidad.
-7. **Avisos.** El flujo de avisos lee `dbo.Notificacion` y envía el aviso por Outlook o Teams.
-8. **Reporte.** `fl_reporte_deuda` toma la plantilla Word de **Plantillas**, la llena con datos de las vistas del hub y guarda el PDF en **Reportes**.
+7. **Avisos** (*flujo pendiente de construir; la cola ya se llena*). El flujo de avisos lee `dbo.Notificacion` y envía el aviso por Outlook o Teams.
+8. **Reporte** (*pendiente de construir*). `fl_reporte_deuda` toma la plantilla Word de **Plantillas**, la llena con datos de las vistas del hub y guarda el PDF en **Reportes**.
 9. **Despliegue (no es un flujo de datos).** Desde el PC, con la sesión UNI del usuario: `az` y `func` → Azure; `pac` → Power Platform; `m365` → SharePoint; Power BI Desktop → Power BI Service.
 10. **Prototipo (independiente).** Un navegador público abre `https://meowlab.tech/debt-hub/`. Caddy envía `/debt-hub/` a `hub-deuda-staging` (nginx) y `/debt-hub/api/*` a `hub-deuda-api-v4`. Usa datos sintéticos y no toca Azure ni Power Platform.
 

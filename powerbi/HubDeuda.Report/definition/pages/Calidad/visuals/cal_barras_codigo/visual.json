@@ -1,0 +1,97 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_barras_codigo",
+  "position": {
+    "x": 20,
+    "y": 196,
+    "z": 8000,
+    "height": 260,
+    "width": 305,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "clusteredBarChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "Codigo"
+                }
+              },
+              "queryRef": "vObservacionCalidad.Codigo",
+              "nativeQueryRef": "Codigo",
+              "displayName": "Código",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "Observaciones"
+                }
+              },
+              "queryRef": "vObservacionCalidad.Observaciones",
+              "nativeQueryRef": "Observaciones"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Measure": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "vObservacionCalidad"
+                  }
+                },
+                "Property": "Observaciones"
+              }
+            },
+            "direction": "Descending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Observaciones por código'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

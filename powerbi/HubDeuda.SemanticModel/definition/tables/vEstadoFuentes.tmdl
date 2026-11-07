@@ -1,0 +1,75 @@
+/// Frescura por fuente (dbo.vEstadoFuentes). AreaId 0 = base local; 1..10 = áreas. Sin relación con Area.
+table vEstadoFuentes
+	lineageTag: 7862bcb3-d398-546b-8086-c0c5f142157e
+
+	column AreaId
+		dataType: int64
+		formatString: 0
+		lineageTag: fade6088-b050-5e30-8006-6535c13a36c6
+		summarizeBy: none
+		sourceColumn: AreaId
+
+	column Nombre
+		dataType: string
+		lineageTag: 3e2333a8-2492-5fbb-a567-a7969cb61e88
+		summarizeBy: none
+		sourceColumn: Nombre
+		sortByColumn: AreaId
+
+	column LoteId
+		dataType: string
+		lineageTag: ec5cd5ef-8d67-5c87-87bd-01c4b2d185c1
+		summarizeBy: none
+		sourceColumn: LoteId
+
+	/// Versión vigente: modificación del archivo o corte de la base (UTC).
+	column ModificadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 4aa62abd-b4bf-5d34-bff4-bb20c358e557
+		summarizeBy: none
+		sourceColumn: ModificadoUtc
+
+	column PublicadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 4ef7367d-baa5-5578-8d1a-f307dbda11cd
+		summarizeBy: none
+		sourceColumn: PublicadoUtc
+
+	column Estado
+		dataType: string
+		lineageTag: 4ed7f2c4-125f-52ea-80d0-3e9c6297a96f
+		summarizeBy: none
+		sourceColumn: Estado
+
+	column UltimaVerificacionUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 55123fa4-99cc-5d69-8be0-e9d78ca9c297
+		summarizeBy: none
+		sourceColumn: UltimaVerificacionUtc
+
+	column UltimoIntentoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 41342c9d-f26f-5695-8cd7-05d6f9f9f025
+		summarizeBy: none
+		sourceColumn: UltimoIntentoUtc
+
+	column UltimoEstado
+		dataType: string
+		lineageTag: 36b90370-857b-5e8f-b276-de3e0889a355
+		summarizeBy: none
+		sourceColumn: UltimoEstado
+
+	partition vEstadoFuentes = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "vEstadoFuentes"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"AreaId", "Nombre", "LoteId", "ModificadoUtc", "PublicadoUtc", "Estado", "UltimaVerificacionUtc", "UltimoIntentoUtc", "UltimoEstado"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"AreaId", Int64.Type}, {"Nombre", type text}, {"LoteId", type text}, {"ModificadoUtc", type datetime}, {"PublicadoUtc", type datetime}, {"Estado", type text}, {"UltimaVerificacionUtc", type datetime}, {"UltimoIntentoUtc", type datetime}, {"UltimoEstado", type text}})
+				in
+				    Tipos

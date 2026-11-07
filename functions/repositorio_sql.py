@@ -57,18 +57,19 @@ def contexto_area(cur, area_id):
             "fuente_activa": bool(r[2]) if r[2] is not None else False}
 
 
-def manifiestos_omitidos(cur, nombres):
-    """Nombres terminales o en espera de reintento (según reloj de SQL)."""
-    omitidos = set()
+def estado_manifiestos(cur, nombres):
+    """{nombre: (terminal, próximo intento UTC o None)} de los manifiestos ya
+    vistos. Los ausentes son nuevos. 'en_espera' usa el reloj de SQL."""
+    res = {}
     for i in range(0, len(nombres), 500):
         parte = nombres[i:i + 500]
         marcas = ",".join("?" * len(parte))
-        for (n,) in cur.execute(
-                f"""SELECT Manifiesto FROM dbo.ProcesoManifiesto
-                    WHERE Manifiesto IN ({marcas})
-                      AND (Terminal=1 OR ProximoIntentoUtc>SYSUTCDATETIME())""", *parte):
-            omitidos.add(n)
-    return omitidos
+        for n, terminal, proximo, espera in cur.execute(
+                f"""SELECT Manifiesto, Terminal, ProximoIntentoUtc,
+                       CAST(CASE WHEN ProximoIntentoUtc>SYSUTCDATETIME() THEN 1 ELSE 0 END AS bit)
+                    FROM dbo.ProcesoManifiesto WHERE Manifiesto IN ({marcas})""", *parte):
+            res[n] = (bool(terminal), proximo if espera else None)
+    return res
 
 
 # ---------- dentro de la transacción (C2–C6) ----------
@@ -161,8 +162,9 @@ def marcar_proceso(cur, manifiesto, lote_id, terminal, error=None):
 
 
 def registrar_fallo_tecnico(cur, manifiesto, lote_id, error):
-    """Backoff exponencial 1, 2, 4 … hasta 60 minutos. No es terminal."""
-    cur.execute("""MERGE dbo.ProcesoManifiesto WITH (HOLDLOCK) AS t
+    """Backoff exponencial 1, 2, 4 … hasta 60 minutos. No es terminal.
+    Devuelve el próximo intento (UTC) para guardarlo también en el blob."""
+    r = cur.execute("""MERGE dbo.ProcesoManifiesto WITH (HOLDLOCK) AS t
         USING (SELECT ? AS Manifiesto) AS s ON t.Manifiesto=s.Manifiesto
         WHEN MATCHED AND t.Terminal=0 THEN UPDATE SET Intentos=t.Intentos+1,
              LoteId=COALESCE(?, t.LoteId), UltimoError=?,
@@ -170,5 +172,7 @@ def registrar_fallo_tecnico(cur, manifiesto, lote_id, error):
                                ELSE POWER(2,t.Intentos) END, SYSUTCDATETIME()),
              ActualizadoUtc=SYSUTCDATETIME()
         WHEN NOT MATCHED THEN INSERT (Manifiesto, LoteId, Intentos, UltimoError, ProximoIntentoUtc)
-             VALUES (?,?,1,?,DATEADD(MINUTE,1,SYSUTCDATETIME()));""",
-                manifiesto, lote_id, error[:1000], manifiesto, lote_id, error[:1000])
+             VALUES (?,?,1,?,DATEADD(MINUTE,1,SYSUTCDATETIME()))
+        OUTPUT inserted.ProximoIntentoUtc;""",
+                    manifiesto, lote_id, error[:1000], manifiesto, lote_id, error[:1000]).fetchone()
+    return r[0] if r else None

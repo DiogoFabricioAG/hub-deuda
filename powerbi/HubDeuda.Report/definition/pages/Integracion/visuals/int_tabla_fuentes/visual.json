@@ -1,0 +1,182 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "int_tabla_fuentes",
+  "position": {
+    "x": 20,
+    "y": 196,
+    "z": 7000,
+    "height": 270,
+    "width": 1240,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "AreaId"
+                }
+              },
+              "queryRef": "vEstadoFuentes.AreaId",
+              "nativeQueryRef": "AreaId"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "Nombre"
+                }
+              },
+              "queryRef": "vEstadoFuentes.Nombre",
+              "nativeQueryRef": "Nombre",
+              "displayName": "Fuente"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "Estado"
+                }
+              },
+              "queryRef": "vEstadoFuentes.Estado",
+              "nativeQueryRef": "Estado",
+              "displayName": "Estado versión vigente"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "ModificadoUtc"
+                }
+              },
+              "queryRef": "vEstadoFuentes.ModificadoUtc",
+              "nativeQueryRef": "ModificadoUtc",
+              "displayName": "Fecha de corte / versión (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "PublicadoUtc"
+                }
+              },
+              "queryRef": "vEstadoFuentes.PublicadoUtc",
+              "nativeQueryRef": "PublicadoUtc",
+              "displayName": "Publicado (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "UltimaVerificacionUtc"
+                }
+              },
+              "queryRef": "vEstadoFuentes.UltimaVerificacionUtc",
+              "nativeQueryRef": "UltimaVerificacionUtc",
+              "displayName": "Última verificación (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "UltimoIntentoUtc"
+                }
+              },
+              "queryRef": "vEstadoFuentes.UltimoIntentoUtc",
+              "nativeQueryRef": "UltimoIntentoUtc",
+              "displayName": "Último intento (UTC)"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vEstadoFuentes"
+                    }
+                  },
+                  "Property": "UltimoEstado"
+                }
+              },
+              "queryRef": "vEstadoFuentes.UltimoEstado",
+              "nativeQueryRef": "UltimoEstado",
+              "displayName": "Último estado"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "vEstadoFuentes"
+                  }
+                },
+                "Property": "AreaId"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Estado de cada fuente: base y 10 áreas (fechas UTC)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

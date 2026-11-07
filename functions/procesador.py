@@ -212,18 +212,69 @@ def _mensaje_sql(exc):
     return (m.group(1) if m else "Rechazado al publicar")[:500]
 
 
-def procesar_pendientes(limite=20, almacen=None, conectar=sqlconn.conectar):
+META_ESTADO, META_PROXIMO, META_RESULTADO = "hd_estado", "hd_proximo", "hd_resultado"
+_FORMATO = "%Y-%m-%dT%H:%M:%SZ"
+
+
+def _fecha_meta(dt):
+    """datetime (aware o naive UTC, como lo devuelve SQL) → texto ASCII para metadatos."""
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc)
+    return dt.strftime(_FORMATO)
+
+
+def _leer_fecha_meta(texto):
+    try:
+        return datetime.strptime(texto, _FORMATO).replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        return datetime.min.replace(tzinfo=timezone.utc)   # ilegible → se considera vencido
+
+
+def _marcar(almacen, nombre, **meta):
+    """Deja en el blob del manifiesto su estado. Si falla, solo se pierde el
+    atajo: el siguiente minuto se vuelve a consultar SQL, sin efecto en saldos."""
+    try:
+        almacen.fijar_metadatos(nombre, {k: v for k, v in meta.items() if v})
+    except Exception:
+        log.warning("No se pudieron fijar los metadatos de %s", nombre, exc_info=True)
+
+
+def procesar_pendientes(limite=20, almacen=None, conectar=sqlconn.conectar, ahora=None):
+    """Procesa los manifiestos nuevos o con reintento vencido.
+
+    Sin trabajo pendiente NO abre conexión a Azure SQL: así la base serverless
+    se pausa y no agota la oferta gratuita (100 000 vCore-segundos al mes).
+    """
     almacen = almacen or crear_almacen()
-    nombres = almacen.listar_manifiestos()
-    if not nombres:
+    ahora = ahora or datetime.now(timezone.utc)
+    candidatos = []
+    for nombre, meta in almacen.listar_manifiestos_meta():
+        if meta.get(META_ESTADO) == "terminal":
+            continue
+        if meta.get(META_PROXIMO) and _leer_fecha_meta(meta[META_PROXIMO]) > ahora:
+            continue
+        candidatos.append(nombre)
+    if not candidatos:
         return []
+
     with conectar() as cn:
-        omitidos = repo.manifiestos_omitidos(cn.cursor(), nombres)
-    pendientes = [n for n in nombres if n not in omitidos][:limite]
+        vistos = repo.estado_manifiestos(cn.cursor(), candidatos)
+    pendientes = []
+    for nombre in candidatos:
+        terminal, proximo = vistos.get(nombre, (False, None))
+        if terminal:            # procesado antes de existir los metadatos
+            _marcar(almacen, nombre, **{META_ESTADO: "terminal"})
+        elif proximo:           # en espera de reintento según SQL
+            _marcar(almacen, nombre, **{META_PROXIMO: _fecha_meta(proximo)})
+        else:
+            pendientes.append(nombre)
+
     resultados = []
-    for nombre in pendientes:
+    for nombre in pendientes[:limite]:
         try:
-            resultados.append(procesar_manifiesto(nombre, almacen, conectar))
+            r = procesar_manifiesto(nombre, almacen, conectar)
+            resultados.append(r)
+            _marcar(almacen, nombre, **{META_ESTADO: "terminal", META_RESULTADO: r["estado"]})
         except Exception as exc:  # fallo técnico: no es "archivo inválido"
             log.exception("Fallo técnico en %s", nombre)
             lote = nombre[:-5] if nombre.endswith(".json") else None
@@ -231,12 +282,15 @@ def procesar_pendientes(limite=20, almacen=None, conectar=sqlconn.conectar):
                 lote = str(uuid.UUID(lote))
             except (TypeError, ValueError):
                 lote = None
+            proximo = None
             try:
                 with conectar() as cn:
-                    repo.registrar_fallo_tecnico(cn.cursor(), nombre, lote,
-                                                 f"{type(exc).__name__}: {exc}")
+                    proximo = repo.registrar_fallo_tecnico(cn.cursor(), nombre, lote,
+                                                           f"{type(exc).__name__}: {exc}")
             except Exception:
                 log.exception("No se pudo registrar el fallo técnico de %s", nombre)
+            if proximo:
+                _marcar(almacen, nombre, **{META_PROXIMO: _fecha_meta(proximo)})
             resultados.append({"manifiesto": nombre, "estado": "REINTENTO",
                                "error": type(exc).__name__})
     return resultados

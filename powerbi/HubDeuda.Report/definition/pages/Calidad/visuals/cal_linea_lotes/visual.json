@@ -1,0 +1,112 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_linea_lotes",
+  "position": {
+    "x": 20,
+    "y": 470,
+    "z": 11000,
+    "height": 236,
+    "width": 625,
+    "tabOrder": 11000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "FechaCreadoUtc"
+                }
+              },
+              "queryRef": "vLoteCalidad.FechaCreadoUtc",
+              "nativeQueryRef": "FechaCreadoUtc",
+              "displayName": "Fecha (UTC)",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "Lotes"
+                }
+              },
+              "queryRef": "vLoteCalidad.Lotes",
+              "nativeQueryRef": "Lotes"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vLoteCalidad"
+                    }
+                  },
+                  "Property": "LotesRechazados"
+                }
+              },
+              "queryRef": "vLoteCalidad.LotesRechazados",
+              "nativeQueryRef": "LotesRechazados",
+              "displayName": "Lotes rechazados"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "vLoteCalidad"
+                  }
+                },
+                "Property": "FechaCreadoUtc"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Evolución diaria de lotes (fecha UTC de CreadoUtc)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

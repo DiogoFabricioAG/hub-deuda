@@ -1,0 +1,90 @@
+/// Observaciones de validación (dbo.vObservacionCalidad). No se relaciona con vDeuda.
+table vObservacionCalidad
+	lineageTag: f1a7445d-4728-5140-8aa3-aa538054353a
+
+	/// Observaciones registradas.
+	measure Observaciones = COUNTROWS(vObservacionCalidad)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: ebe6d2d1-e362-5775-8bbc-3ab65f3d013f
+
+	/// Observaciones no subsanadas (Subsanada = FALSE).
+	measure ObservacionesPendientes = COALESCE(CALCULATE(COUNTROWS(vObservacionCalidad), vObservacionCalidad[Subsanada] = FALSE()), 0)
+		formatString: #,0
+		displayFolder: Métricas de carga
+		lineageTag: d8a65db1-307c-5ff4-b10f-ea8653f7a25c
+
+	column ObservacionId
+		dataType: int64
+		formatString: 0
+		lineageTag: 609aceb3-70e7-56e5-9221-a37b543c5ee2
+		summarizeBy: none
+		sourceColumn: ObservacionId
+
+	column LoteId
+		dataType: string
+		lineageTag: c2dc229e-3770-5471-8735-2950217bad5b
+		summarizeBy: none
+		sourceColumn: LoteId
+
+	column AreaId
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: fcafbbf9-4fbc-5b48-a3da-564de5428a2b
+		summarizeBy: none
+		sourceColumn: AreaId
+
+	column FilaExcel
+		dataType: int64
+		formatString: 0
+		lineageTag: 22517a4f-26b0-52eb-968c-e17f9d126cd4
+		summarizeBy: none
+		sourceColumn: FilaExcel
+
+	column Campo
+		dataType: string
+		lineageTag: e57d21f8-864e-5fa9-bc65-bd28c6c1e648
+		summarizeBy: none
+		sourceColumn: Campo
+
+	column Codigo
+		dataType: string
+		lineageTag: 0305930a-11a9-5cfb-a80d-59d023be76b0
+		summarizeBy: none
+		sourceColumn: Codigo
+
+	column CreadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn
+		lineageTag: 5cae4772-bf08-52f3-9995-08d8daf99c05
+		summarizeBy: none
+		sourceColumn: CreadoUtc
+
+	column Subsanada
+		dataType: boolean
+		lineageTag: 422658c2-8f7d-5dc3-aa75-e879ea11c585
+		summarizeBy: none
+		sourceColumn: Subsanada
+
+	/// Fecha (UTC) de CreadoUtc del lote.
+	column FechaCreadoUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 99d52d41-4cd0-5388-86a3-26f19aae5d72
+		summarizeBy: none
+		sourceColumn: FechaCreadoUtc
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition vObservacionCalidad = m
+		mode: import
+		source =
+				let
+				    Origen = Sql.Database(ServidorSQL, BaseSQL),
+				    Vista = Origen{[Schema = "dbo", Item = "vObservacionCalidad"]}[Data],
+				    Columnas = Table.SelectColumns(Vista, {"ObservacionId", "LoteId", "AreaId", "FilaExcel", "Campo", "Codigo", "CreadoUtc", "Subsanada"}),
+				    Tipos = Table.TransformColumnTypes(Columnas, {{"ObservacionId", Int64.Type}, {"LoteId", type text}, {"AreaId", Int64.Type}, {"FilaExcel", Int64.Type}, {"Campo", type text}, {"Codigo", type text}, {"CreadoUtc", type datetime}, {"Subsanada", type logical}}),
+				    ConFecha = Table.AddColumn(Tipos, "FechaCreadoUtc", each DateTime.Date([CreadoUtc]), type date)
+				in
+				    ConFecha

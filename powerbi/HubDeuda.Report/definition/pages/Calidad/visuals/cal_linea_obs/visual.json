@@ -1,0 +1,112 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_linea_obs",
+  "position": {
+    "x": 660,
+    "y": 470,
+    "z": 12000,
+    "height": 236,
+    "width": 600,
+    "tabOrder": 12000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "FechaCreadoUtc"
+                }
+              },
+              "queryRef": "vObservacionCalidad.FechaCreadoUtc",
+              "nativeQueryRef": "FechaCreadoUtc",
+              "displayName": "Fecha (UTC)",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "Observaciones"
+                }
+              },
+              "queryRef": "vObservacionCalidad.Observaciones",
+              "nativeQueryRef": "Observaciones"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "ObservacionesPendientes"
+                }
+              },
+              "queryRef": "vObservacionCalidad.ObservacionesPendientes",
+              "nativeQueryRef": "ObservacionesPendientes",
+              "displayName": "Pendientes"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "vObservacionCalidad"
+                  }
+                },
+                "Property": "FechaCreadoUtc"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Evolución diaria de observaciones (fecha UTC de CreadoUtc)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,16 @@
+model Model
+	culture: es-PE
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: es-PE
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table Area
+ref table vDeuda
+ref table vMovimientoDetalle
+ref table vEstadoFuentes
+ref table vLoteCalidad
+ref table vObservacionCalidad

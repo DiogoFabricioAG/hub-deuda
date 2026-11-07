@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "cal_card_pendientes",
+  "position": {
+    "x": 500,
+    "y": 72,
+    "z": 5000,
+    "height": 110,
+    "width": 225,
+    "tabOrder": 5000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vObservacionCalidad"
+                    }
+                  },
+                  "Property": "ObservacionesPendientes"
+                }
+              },
+              "queryRef": "vObservacionCalidad.ObservacionesPendientes",
+              "nativeQueryRef": "ObservacionesPendientes",
+              "displayName": "Observaciones pendientes"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

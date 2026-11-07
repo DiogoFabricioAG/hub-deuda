@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.5.0/schema.json",
+  "name": "res_card_saldo",
+  "position": {
+    "x": 20,
+    "y": 72,
+    "z": 3000,
+    "height": 110,
+    "width": 300,
+    "tabOrder": 3000
+  },
+  "visual": {
+    "visualType": "cardVisual",
+    "query": {
+      "queryState": {
+        "Data": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "vDeuda"
+                    }
+                  },
+                  "Property": "SaldoTotal"
+                }
+              },
+              "queryRef": "vDeuda.SaldoTotal",
+              "nativeQueryRef": "SaldoTotal",
+              "displayName": "Saldo total (S/)"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}
