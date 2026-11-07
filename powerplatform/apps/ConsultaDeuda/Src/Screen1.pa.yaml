@@ -1,0 +1,243 @@
+# App «Consulta de deuda» (sección 11 de la guía). Solo lectura sobre vistas
+# autorizadas: vDeuda, vMovimientoDetalle, vEstadoFuentes. El saldo se calcula
+# en SQL, no en la interfaz. Datos ficticios.
+Screens:
+  Screen1:
+    Properties:
+      Fill: =RGBA(245, 247, 250, 1)
+      LoadingSpinnerColor: =RGBA(0, 63, 114, 1)
+    Children:
+      - recCabecera:
+          Control: Rectangle
+          Properties:
+            Fill: =RGBA(0, 63, 114, 1)
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =72
+      - lblTitulo:
+          Control: Label
+          Properties:
+            Text: ="Consulta de deuda"
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =22
+            FontWeight: =FontWeight.Bold
+            X: =24
+            Y: =8
+            Width: =600
+            Height: =36
+      - lblSubtitulo:
+          Control: Label
+          Properties:
+            Text: ="Hub de Deuda · Azure SQL · datos ficticios de laboratorio (SI806U)"
+            Color: =RGBA(200, 220, 240, 1)
+            Size: =12
+            X: =24
+            Y: =42
+            Width: =700
+            Height: =24
+      - lblCorteBase:
+          Control: Label
+          Properties:
+            Text: |-
+              =With({b: LookUp(vEstadoFuentes, AreaId = 0)},
+                If(IsBlank(b.ModificadoUtc), "Sin base de deuda publicada",
+                  "Corte de la base: " & Text(b.ModificadoUtc, "dd/mm/yyyy hh:mm") & " UTC"))
+            Color: =RGBA(255, 255, 255, 1)
+            Align: =Align.Right
+            Size: =12
+            X: =Parent.Width - 520
+            Y: =24
+            Width: =496
+            Height: =28
+      - txtBuscar:
+          Control: Classic/TextInput
+          Properties:
+            Default: =""
+            HintText: ="Papeleta (P0001), DNI/RUC o placa"
+            Size: =14
+            X: =24
+            Y: =92
+            Width: =480
+            Height: =44
+      - btnActualizar:
+          Control: Classic/Button
+          Properties:
+            Text: ="Actualizar"
+            OnSelect: =Refresh(vDeuda); Refresh(vMovimientoDetalle); Refresh(vEstadoFuentes)
+            Fill: =RGBA(0, 120, 212, 1)
+            X: =516
+            Y: =92
+            Width: =148
+            Height: =44
+      - lblResultados:
+          Control: Label
+          Properties:
+            Text: =CountRows(galDeuda.AllItems) & " resultado(s)"
+            Size: =11
+            Color: =RGBA(90, 90, 90, 1)
+            X: =24
+            Y: =140
+            Width: =300
+            Height: =24
+      - galDeuda:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            Items: |-
+              =If(IsBlank(Trim(txtBuscar.Text)), vDeuda,
+                Filter(vDeuda,
+                  PapeletaId = Upper(Trim(txtBuscar.Text)) ||
+                  Documento = Trim(txtBuscar.Text) ||
+                  Placa = Upper(Trim(txtBuscar.Text))))
+            TemplateSize: =92
+            TemplateFill: =If(ThisItem.IsSelected, RGBA(222, 236, 249, 1), RGBA(255, 255, 255, 1))
+            X: =24
+            Y: =166
+            Width: =640
+            Height: =Parent.Height - 190
+          Children:
+            - lblPapeleta:
+                Control: Label
+                Properties:
+                  Text: =ThisItem.PapeletaId & "   ·   Placa " & Coalesce(ThisItem.Placa, "—")
+                  FontWeight: =FontWeight.Semibold
+                  Size: =16
+                  X: =16
+                  Y: =10
+                  Width: =400
+                  Height: =32
+            - lblDocumento:
+                Control: Label
+                Properties:
+                  Text: =ThisItem.TipoDoc & " " & ThisItem.DocumentoEnmascarado
+                  Size: =12
+                  Color: =RGBA(90, 90, 90, 1)
+                  X: =16
+                  Y: =46
+                  Width: =400
+                  Height: =28
+            - lblSaldo:
+                Control: Label
+                Properties:
+                  Text: ="S/ " & Text(ThisItem.Saldo, "#,##0.00")
+                  Align: =Align.Right
+                  Size: =20
+                  FontWeight: =FontWeight.Bold
+                  Color: =If(ThisItem.RequiereRevision, RGBA(196, 43, 28, 1), RGBA(0, 63, 114, 1))
+                  X: =Parent.TemplateWidth - 236
+                  Y: =22
+                  Width: =220
+                  Height: =40
+            - recSeparador:
+                Control: Rectangle
+                Properties:
+                  Fill: =RGBA(225, 229, 235, 1)
+                  X: =0
+                  Y: =Parent.TemplateHeight - 1
+                  Width: =Parent.TemplateWidth
+                  Height: =1
+      - recDetalle:
+          Control: Rectangle
+          Properties:
+            Fill: =RGBA(255, 255, 255, 1)
+            BorderColor: =RGBA(225, 229, 235, 1)
+            BorderThickness: =1
+            X: =688
+            Y: =92
+            Width: =Parent.Width - 712
+            Height: =Parent.Height - 116
+      - lblDetalleTitulo:
+          Control: Label
+          Properties:
+            Text: =If(IsBlank(galDeuda.Selected.PapeletaId), "Seleccione una papeleta", "Detalle de " & galDeuda.Selected.PapeletaId)
+            Size: =18
+            FontWeight: =FontWeight.Bold
+            X: =708
+            Y: =104
+            Width: =Parent.Width - 752
+            Height: =36
+      - lblDetalleMontos:
+          Control: Label
+          Properties:
+            Text: |-
+              ="Importe original (base local):   S/ " & Text(galDeuda.Selected.ImporteOriginal, "#,##0.00") & Char(10) &
+               "Movimientos de las áreas:        S/ " & Text(galDeuda.Selected.Movimientos, "#,##0.00") & Char(10) &
+               "Saldo consolidado:               S/ " & Text(galDeuda.Selected.Saldo, "#,##0.00") & Char(10) &
+               "Corte de la base:  " & Text(galDeuda.Selected.CorteUtc, "dd/mm/yyyy hh:mm") & " UTC"
+            Size: =13
+            Visible: =!IsBlank(galDeuda.Selected.PapeletaId)
+            X: =708
+            Y: =146
+            Width: =Parent.Width - 752
+            Height: =108
+      - lblMovTitulo:
+          Control: Label
+          Properties:
+            Text: ="Movimientos vigentes por área"
+            FontWeight: =FontWeight.Semibold
+            Size: =13
+            Visible: =!IsBlank(galDeuda.Selected.PapeletaId)
+            X: =708
+            Y: =262
+            Width: =400
+            Height: =28
+      - galMovimientos:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            Items: =Filter(vMovimientoDetalle, PapeletaId = galDeuda.Selected.PapeletaId)
+            TemplateSize: =44
+            Visible: =!IsBlank(galDeuda.Selected.PapeletaId)
+            X: =708
+            Y: =292
+            Width: =Parent.Width - 752
+            Height: =230
+          Children:
+            - lblMovimiento:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =ThisItem.Area & " · " & ThisItem.Tipo & " S/ " & Text(ThisItem.Monto, "#,##0.00") &
+                     " · " & ThisItem.Estado & " · Ref. " & ThisItem.Referencia & " · " & Text(ThisItem.FechaEvento, "dd/mm/yyyy")
+                  Size: =12
+                  X: =8
+                  Y: =6
+                  Width: =Parent.TemplateWidth - 16
+                  Height: =32
+      - lblFuentesTitulo:
+          Control: Label
+          Properties:
+            Text: ="Estado de las fuentes (fecha de corte)"
+            FontWeight: =FontWeight.Semibold
+            Size: =13
+            X: =708
+            Y: =530
+            Width: =400
+            Height: =28
+      - galFuentes:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            Items: =SortByColumns(vEstadoFuentes, "AreaId", SortOrder.Ascending)
+            TemplateSize: =22
+            X: =708
+            Y: =558
+            Width: =Parent.Width - 752
+            Height: =Parent.Height - 590
+          Children:
+            - lblFuente:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =ThisItem.Nombre & ": " &
+                     If(IsBlank(ThisItem.UltimoEstado), "sin cargas",
+                        Coalesce(ThisItem.Estado, "sin versión aceptada") &
+                        If(IsBlank(ThisItem.UltimaVerificacionUtc), "", " · verificado " & Text(ThisItem.UltimaVerificacionUtc, "dd/mm hh:mm") & " UTC") &
+                        If(ThisItem.UltimoEstado in ["RECHAZADO", "CONFLICTO", "OBSOLETO"], " · último intento: " & ThisItem.UltimoEstado, ""))
+                  Size: =10
+                  Color: =If(ThisItem.UltimoEstado in ["RECHAZADO", "CONFLICTO"], RGBA(196, 43, 28, 1), RGBA(60, 60, 60, 1))
+                  X: =4
+                  Y: =0
+                  Width: =Parent.TemplateWidth - 8
+                  Height: =22

@@ -1,0 +1,8 @@
+{
+  "name": "ds_deuda_export",
+  "properties": {
+    "type": "SqlServerTable",
+    "linkedServiceName": { "referenceName": "ls_sql_origen", "type": "LinkedServiceReference" },
+    "typeProperties": { "schema": "dbo", "table": "DeudaExport" }
+  }
+}

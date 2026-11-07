@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Hub de Deuda · arquitectura en tres infraestructuras",
+    "output": "docs/arquitectura-archify.html",
+    "locale": "es",
+    "quality_profile": "showcase",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": { "label": "Personas y herramientas" },
+        "cloud": { "label": "Microsoft 365 (SaaS)" },
+        "backend": { "label": "Flujos, cómputo e integración" },
+        "frontend": { "label": "Apps, tablero y web" },
+        "database": { "label": "Datos y almacenamiento" },
+        "security": { "label": "Secretos" }
+      }
+    },
+    "views": [
+      {
+        "id": "ingesta",
+        "label": "1–3 · Excel de las áreas al hub",
+        "focus": ["personas", "sp_entradas", "pa_copia", "blob", "func", "sql"],
+        "note": "Power Automate copia el original a raw y luego escribe el manifiesto; la Function valida, calcula SHA-256 y publica de forma atómica."
+      },
+      {
+        "id": "base",
+        "label": "4 · Deuda base desde el PC",
+        "focus": ["sqlexpress", "shir", "adf", "kv", "sql"],
+        "note": "Cada hora ADF usa el SHIR del PC (salida 443 y 1433). Si el PC está apagado, sigue la última base válida (T13/T14)."
+      },
+      {
+        "id": "consumo",
+        "label": "5–8 · Apps, tablero, avisos y reporte",
+        "focus": ["sql", "apps", "pbi", "pa_avisos", "outlook", "pa_reporte", "sp_reportes"],
+        "note": "Todo corre en la nube de Microsoft. Developer Plan: solo el dueño usa lo Premium; compartir Power BI exige Pro, PPU o Fabric."
+      },
+      {
+        "id": "despliegue",
+        "label": "9 · Despliegue desde el PC",
+        "focus": ["devtools", "pbid", "func", "pbi"],
+        "note": "az y func despliegan Azure; pac, Power Platform; m365, SharePoint; Power BI Desktop publica el modelo. Sesión UNI."
+      },
+      {
+        "id": "prototipo",
+        "label": "10 · Prototipo en el VPS (independiente)",
+        "focus": ["navegador", "caddy", "api_v4", "staging"],
+        "note": "Datos sintéticos y sin conexión al hub. Leer el hub en solo lectura es una opción futura no planificada, con autenticación."
+      }
+    ]
+  },
+  "components": [
+    { "id": "personas", "type": "external", "icon": "person", "label": "Personas de las áreas", "sublabel": "áreas 01–10", "pos": [40, 80], "size": [150, 64] },
+
+    { "id": "sp_entradas", "type": "cloud", "label": "SharePoint Entradas", "sublabel": "movimientos.xlsx por área", "tag": "Microsoft 365", "pos": [300, 80], "size": [170, 64] },
+    { "id": "outlook", "type": "cloud", "icon": "messagebus", "label": "Outlook / Teams", "sublabel": "reciben los avisos", "tag": "Microsoft 365", "pos": [300, 258], "size": [170, 64] },
+    { "id": "sp_reportes", "type": "cloud", "label": "Plantillas · Reportes", "sublabel": "bibliotecas SharePoint", "tag": "Microsoft 365", "pos": [300, 348], "size": [170, 64] },
+
+    { "id": "pa_copia", "type": "backend", "icon": "clock", "label": "Power Automate copia", "sublabel": "13:00, 18:00 o Cargar ahora", "tag": "Power Platform", "pos": [570, 80], "size": [170, 64] },
+    { "id": "pa_avisos", "type": "backend", "label": "Flujo de avisos", "sublabel": "lee dbo.Notificacion", "tag": "Power Platform", "pos": [570, 258], "size": [170, 64] },
+    { "id": "pa_reporte", "type": "backend", "label": "fl_reporte_deuda", "sublabel": "plantilla Word → PDF", "tag": "Power Platform", "pos": [570, 348], "size": [170, 64] },
+    { "id": "apps", "type": "frontend", "label": "Power Apps", "sublabel": "Consulta · Mis observaciones", "tag": "Power Platform", "pos": [570, 438], "size": [170, 64] },
+    { "id": "pbi", "type": "frontend", "label": "Power BI Service", "sublabel": "Resumen · Integración · Calidad", "tag": "Pro/PPU para compartir", "pos": [840, 610], "size": [190, 64] },
+
+    { "id": "blob", "type": "database", "label": "Storage de negocio", "sublabel": "raw · manifests · reports", "tag": "Azure", "pos": [840, 80], "size": [170, 64] },
+    { "id": "func", "type": "backend", "icon": "clock", "label": "Function App Python", "sublabel": "timer 1 min · SHA-256", "tag": "Azure", "pos": [1110, 80], "size": [170, 64] },
+    { "id": "sql", "type": "database", "label": "Azure SQL HubDeuda", "sublabel": "vDeuda · vEstadoFuentes", "tag": "usp_Publicar* · sp_getapplock", "pos": [1110, 200], "size": [170, 360] },
+    { "id": "kv", "type": "security", "label": "Key Vault", "sublabel": "secreto lector BDOrigen", "tag": "Azure", "pos": [1380, 238], "size": [170, 64] },
+    { "id": "adf", "type": "backend", "icon": "clock", "label": "Data Factory", "sublabel": "pl_base_completa · horario", "tag": "Azure", "pos": [1380, 348], "size": [170, 64] },
+
+    { "id": "sqlexpress", "type": "database", "label": "SQL Server Express", "sublabel": "BDOrigen.dbo.DeudaOrigen", "tag": "localhost\\SQLEXPRESS", "pos": [1110, 790], "size": [170, 64] },
+    { "id": "shir", "type": "backend", "label": "Self-hosted IR (SHIR)", "sublabel": "salida 443 y 1433", "tag": "solo Windows", "pos": [1380, 790], "size": [170, 64] },
+    { "id": "pbid", "type": "frontend", "label": "Power BI Desktop", "sublabel": "modelo del tablero", "pos": [1110, 900], "size": [170, 64] },
+    { "id": "devtools", "type": "external", "icon": "briefcase", "label": "Repo Git + CLIs", "sublabel": "az · func · pac · m365", "tag": "D:\\hub-deuda-azure", "pos": [1380, 900], "size": [170, 64] },
+
+    { "id": "navegador", "type": "external", "icon": "person", "label": "Navegador público", "sublabel": "Internet", "pos": [40, 790], "size": [150, 64] },
+    { "id": "caddy", "type": "backend", "label": "Caddy", "sublabel": "https://meowlab.tech", "tag": "facturaya-ai-caddy-1", "pos": [300, 790], "size": [170, 64] },
+    { "id": "api_v4", "type": "backend", "label": "hub-deuda-api-v4", "sublabel": "Python + SQLite (sintético)", "tag": "red hub-deuda-private", "pos": [600, 790], "size": [170, 64] },
+    { "id": "staging", "type": "frontend", "label": "hub-deuda-staging", "sublabel": "nginx · frontend estático", "pos": [600, 900], "size": [170, 64] }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Nube de Microsoft · tenant UNI · SaaS/PaaS, no se autoaloja",
+      "wraps": ["sp_entradas", "outlook", "sp_reportes", "pa_copia", "pa_avisos", "pa_reporte", "apps", "pbi", "blob", "func", "sql", "kv", "adf"]
+    },
+    {
+      "kind": "region",
+      "label": "PC Windows 11 · on-premise simulado · encendido en cargas horarias",
+      "wraps": ["sqlexpress", "shir", "pbid", "devtools"]
+    },
+    {
+      "kind": "region",
+      "label": "VPS meowlab · Linux + Docker · sin Power Platform ni SHIR",
+      "wraps": ["caddy", "api_v4", "staging"]
+    }
+  ],
+  "connections": [
+    { "id": "f1-edita", "from": "personas", "to": "sp_entradas", "label": "1 edita Excel", "variant": "emphasis" },
+    { "id": "f2-original", "from": "sp_entradas", "to": "pa_copia", "label": "2 original", "variant": "emphasis" },
+    { "id": "f2-raw", "from": "pa_copia", "to": "blob", "label": "2 raw + JSON", "variant": "emphasis" },
+    { "id": "f3-lote", "from": "blob", "to": "func", "label": "3 lee lote", "variant": "emphasis" },
+    { "id": "f3-publica", "from": "func", "to": "sql", "label": "3 publica", "variant": "emphasis", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "f4-origen", "from": "sqlexpress", "to": "shir", "label": "4 lee origen" },
+    { "id": "f4-control", "from": "shir", "to": "adf", "label": "4 HTTPS 443 saliente", "fromSide": "top", "toSide": "bottom" },
+    { "id": "f4-basefila", "from": "shir", "to": "sql", "label": "4 BaseFila :1433", "fromSide": "top", "toSide": "right" },
+    { "id": "f4-publica", "from": "adf", "to": "sql", "label": "4 publica", "fromSide": "left", "toSide": "right" },
+    { "id": "kv-secreto", "from": "kv", "to": "adf", "label": "secreto", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+
+    { "id": "f5-consulta", "from": "sql", "to": "apps", "label": "5 vDeuda", "fromSide": "left", "toSide": "right" },
+    { "id": "f6-vistas", "from": "sql", "to": "pbi", "label": "6 vistas", "fromSide": "bottom", "toSide": "right", "via": [[1240, 642]] },
+    { "id": "f7-notificacion", "from": "sql", "to": "pa_avisos", "label": "7 Notificacion", "fromSide": "left", "toSide": "right" },
+    { "id": "f7-aviso", "from": "pa_avisos", "to": "outlook", "label": "7 aviso" },
+    { "id": "f8-datos", "from": "sql", "to": "pa_reporte", "label": "8 datos", "fromSide": "left", "toSide": "right" },
+    { "id": "f8-pdf", "from": "pa_reporte", "to": "sp_reportes", "label": "8 PDF" },
+
+    { "id": "f9-despliegue", "from": "devtools", "to": "func", "label": "9 despliegue", "fromSide": "right", "toSide": "right", "via": [[1610, 932], [1610, 112]] },
+    { "id": "f9-publica", "from": "pbid", "to": "pbi", "label": "9 publica", "fromSide": "left", "toSide": "bottom", "via": [[935, 932]] },
+
+    { "id": "f10-https", "from": "navegador", "to": "caddy", "label": "10 HTTPS" },
+    { "id": "proto-api", "from": "caddy", "to": "api_v4", "label": "/debt-hub/api/*" },
+    { "id": "proto-web", "from": "caddy", "to": "staging", "label": "/debt-hub/", "fromSide": "bottom", "toSide": "left" },
+
+    { "id": "opcional-futuro", "from": "sql", "to": "api_v4", "label": "opcional · futuro", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "via": [[1140, 585], [670, 585]] }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Flujos numerados",
+      "items": [
+        "1 · Cada área edita movimientos.xlsx (tblMovimientos) en Entradas de SharePoint.",
+        "2 · fl_copia_programada (13:00 y 18:00, Lima) o fl_cargar_area copia el original a Blob raw y luego escribe manifests/‹LoteId›.json.",
+        "3 · La Function lee manifiesto + raw, valida, calcula SHA-256 y publica con sp_getapplock y usp_PublicarArea; si hay errores registra Observacion y Notificacion.",
+        "4 · Cada hora ADF (pl_base_completa) usa el SHIR del PC: lee BDOrigen, escribe BaseFila por 1433 y publica con usp_PublicarBase.",
+        "5 · Power Apps: ConsultaDeuda sobre vDeuda y Mis observaciones sobre vObservaciones01..10.",
+        "6 · Power BI Service lee las vistas del hub.",
+        "7 · El flujo de avisos lee dbo.Notificacion y avisa por Outlook o Teams.",
+        "8 · fl_reporte_deuda llena la plantilla Word y guarda el PDF en Reportes.",
+        "9 · Despliegue desde el PC: az y func → Azure, pac → Power Platform, m365 → SharePoint, Power BI Desktop → Power BI Service.",
+        "10 · Navegador público → meowlab.tech/debt-hub/ (prototipo con datos sintéticos)."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Limitantes",
+      "items": [
+        "Power Platform y Power BI Service son SaaS de Microsoft: corren en su nube, ligados a la cuenta UNI; no se instalan en el VPS.",
+        "El SHIR solo existe para Windows: va en el PC, no en el VPS Linux.",
+        "El PC debe estar encendido y sin suspensión en las cargas horarias; si no, sigue la última base válida y vEstadoFuentes muestra el corte atrasado (T13/T14).",
+        "El SQL local no se expone: el SHIR solo abre salidas 443 y 1433.",
+        "Developer Plan: solo el dueño ejecuta apps y flujos Premium.",
+        "Azure for Students limita regiones y crédito (≈ USD 100)."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Opción futura, no planificada",
+      "items": [
+        "El prototipo del VPS podría leer en solo lectura una API o vistas del hub en Azure.",
+        "Requeriría autenticación y permisos mínimos; hoy no se implementa y el VPS no está conectado al hub."
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "También presentes (sin flechas en el diagrama)",
+      "items": [
+        "Nube: lista ConfigAreas, biblioteca Evidencias, Storage del runtime de Functions, Application Insights / Log Analytics y Entra ID.",
+        "VPS: contenedor hub-deuda-demo sin tráfico, otros sitios (meowlab.tech, app.meowlab.tech, facturaya) y el agente Hermes."
+      ]
+    }
+  ]
+}

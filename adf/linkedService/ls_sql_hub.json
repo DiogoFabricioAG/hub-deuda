@@ -1,0 +1,14 @@
+{
+  "name": "ls_sql_hub",
+  "properties": {
+    "type": "AzureSqlDatabase",
+    "description": "HubDeuda en Azure SQL con la identidad administrada de ADF (rol rol_hub_ingesta_base).",
+    "typeProperties": {
+      "server": "__SQL_SERVER__",
+      "database": "HubDeuda",
+      "encrypt": "mandatory",
+      "trustServerCertificate": false,
+      "authenticationType": "SystemAssignedManagedIdentity"
+    }
+  }
+}

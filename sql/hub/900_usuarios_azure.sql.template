@@ -1,0 +1,17 @@
+-- Solo Azure SQL. Lo aplica tools/desplegar con los valores reales (no se
+-- versionan IDs reales). WITH OBJECT_ID evita que el servidor necesite el
+-- rol Directory Readers para resolver identidades administradas.
+-- Marcadores: {FUNC_NAME} {FUNC_OBJECT_ID} {ADF_NAME} {ADF_OBJECT_ID}
+
+IF DATABASE_PRINCIPAL_ID('{FUNC_NAME}') IS NULL
+  CREATE USER [{FUNC_NAME}] FROM EXTERNAL PROVIDER WITH OBJECT_ID='{FUNC_OBJECT_ID}';
+ALTER ROLE rol_hub_integracion ADD MEMBER [{FUNC_NAME}];
+
+IF DATABASE_PRINCIPAL_ID('{ADF_NAME}') IS NULL
+  CREATE USER [{ADF_NAME}] FROM EXTERNAL PROVIDER WITH OBJECT_ID='{ADF_OBJECT_ID}';
+ALTER ROLE rol_hub_ingesta_base ADD MEMBER [{ADF_NAME}];
+GO
+-- Usuarios de las apps y de Power BI (cuentas o grupos Entra del tenant UNI):
+--   CREATE USER [persona@uni.edu.pe] FROM EXTERNAL PROVIDER;
+--   ALTER ROLE rol_hub_consulta ADD MEMBER [persona@uni.edu.pe];
+--   ALTER ROLE rol_hub_area01  ADD MEMBER [correctora01@uni.edu.pe];

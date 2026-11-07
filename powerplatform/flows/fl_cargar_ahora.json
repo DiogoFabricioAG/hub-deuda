@@ -1,0 +1,102 @@
+{
+  "_descripcion": "Botón «Cargar ahora» (9, flujo manual): lo llama Power Apps con el AreaId. El área enviada es solo un parámetro: el flujo verifica que el correo del usuario que ejecuta (dado por la plataforma) sea el ResponsableUPN de esa área en ConfigAreas antes de llamar al flujo hijo. Devuelve LoteId y estado RECIBIDO (respuesta asíncrona).",
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": { "runtimeSource": "embedded", "connection": { "connectionReferenceLogicalName": "hd_sharepoint" }, "api": { "name": "shared_sharepointonline" } }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": { "defaultValue": {}, "type": "Object" },
+        "$authentication": { "defaultValue": {}, "type": "SecureObject" }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "PowerAppV2",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "number": { "title": "AreaId", "type": "number", "x-ms-dynamically-added": true, "description": "Área 1 a 10", "x-ms-content-hint": "NUMBER" }
+              },
+              "required": [ "number" ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Solicitante": { "type": "Compose", "runAfter": {}, "inputs": "@{toLower(coalesce(triggerOutputs()?['headers']?['x-ms-user-email'], ''))}" },
+        "Leer_area": {
+          "type": "OpenApiConnection",
+          "runAfter": { "Solicitante": [ "Succeeded" ] },
+          "inputs": {
+            "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+            "parameters": {
+              "dataset": "__SITE__",
+              "parameters/method": "GET",
+              "parameters/uri": "_api/web/lists/getbytitle('ConfigAreas')/items?$select=AreaId,ResponsableUPN&$filter=AreaId eq @{int(triggerBody()['number'])} and Activa eq 1",
+              "parameters/headers": { "Accept": "application/json;odata=nometadata" }
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Autorizado": {
+          "type": "If",
+          "runAfter": { "Leer_area": [ "Succeeded" ] },
+          "expression": { "and": [
+            { "equals": [ "@length(body('Leer_area')?['value'])", 1 ] },
+            { "equals": [ "@toLower(coalesce(first(body('Leer_area')?['value'])?['ResponsableUPN'], '-'))", "@outputs('Solicitante')" ] }
+          ] },
+          "actions": {
+            "Copiar_area": {
+              "type": "Workflow",
+              "runAfter": {},
+              "inputs": {
+                "host": { "workflowReferenceName": "__CHILD_ID__" },
+                "body": { "text": "@{int(triggerBody()['number'])}", "text_1": "@{outputs('Solicitante')}" }
+              }
+            },
+            "Responder_resultado": {
+              "type": "Response",
+              "kind": "PowerApp",
+              "runAfter": { "Copiar_area": [ "Succeeded", "Failed" ] },
+              "inputs": {
+                "statusCode": 200,
+                "body": {
+                  "loteid": "@{coalesce(body('Copiar_area')?['loteid'], '')}",
+                  "estado": "@{coalesce(body('Copiar_area')?['estado'], 'ERROR')}",
+                  "mensaje": "@{coalesce(body('Copiar_area')?['mensaje'], 'No se pudo copiar el libro')}"
+                },
+                "schema": { "type": "object", "properties": {
+                  "loteid": { "title": "loteid", "x-ms-dynamically-added": true, "type": "string" },
+                  "estado": { "title": "estado", "x-ms-dynamically-added": true, "type": "string" },
+                  "mensaje": { "title": "mensaje", "x-ms-dynamically-added": true, "type": "string" } } }
+              }
+            }
+          },
+          "else": {
+            "actions": {
+              "Responder_no_autorizado": {
+                "type": "Response",
+                "kind": "PowerApp",
+                "runAfter": {},
+                "inputs": {
+                  "statusCode": 200,
+                  "body": { "loteid": "", "estado": "NO_AUTORIZADO", "mensaje": "Su cuenta no es responsable de esa área en ConfigAreas" },
+                  "schema": { "type": "object", "properties": {
+                    "loteid": { "title": "loteid", "x-ms-dynamically-added": true, "type": "string" },
+                    "estado": { "title": "estado", "x-ms-dynamically-added": true, "type": "string" },
+                    "mensaje": { "title": "mensaje", "x-ms-dynamically-added": true, "type": "string" } } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

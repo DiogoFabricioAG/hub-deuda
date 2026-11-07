@@ -1,0 +1,11 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "STORAGE_URL": "https://<cuenta-negocio>.blob.core.windows.net",
+    "SQL_SERVER": "<servidor>.database.windows.net",
+    "SQL_DATABASE": "HubDeuda"
+  },
+  "_comentario": "Copiar a local.settings.json (ignorado por Git). Para usar SQL Express y una carpeta local en lugar de Azure: definir SQL_ODBC y LOCAL_STORAGE_DIR. Autenticación con 'az login'; no poner claves aquí."
+}

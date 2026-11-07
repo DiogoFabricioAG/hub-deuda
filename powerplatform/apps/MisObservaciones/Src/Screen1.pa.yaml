@@ -1,0 +1,177 @@
+# App «Mis observaciones» (11.6–11.9 de la guía). Cada área lee SOLO su vista
+# vObservacionesNN; en producción el usuario de un área tiene SELECT únicamente
+# sobre la suya, así que elegir otra área devuelve un error de permiso (T12).
+# La corrección se hace en el libro de SharePoint y entra por la misma carga.
+Screens:
+  Screen1:
+    Properties:
+      Fill: =RGBA(245, 247, 250, 1)
+      LoadingSpinnerColor: =RGBA(0, 63, 114, 1)
+      OnVisible: =Select(btnCargar)
+    Children:
+      - recCabecera:
+          Control: Rectangle
+          Properties:
+            Fill: =RGBA(92, 45, 145, 1)
+            X: =0
+            Y: =0
+            Width: =Parent.Width
+            Height: =72
+      - lblTitulo:
+          Control: Label
+          Properties:
+            Text: ="Mis observaciones"
+            Color: =RGBA(255, 255, 255, 1)
+            Size: =22
+            FontWeight: =FontWeight.Bold
+            X: =24
+            Y: =8
+            Width: =600
+            Height: =36
+      - lblSubtitulo:
+          Control: Label
+          Properties:
+            Text: ="Errores de carga por área · corrija el libro en SharePoint y vuelva a cargar (datos ficticios)"
+            Color: =RGBA(225, 210, 245, 1)
+            Size: =12
+            X: =24
+            Y: =42
+            Width: =900
+            Height: =24
+      - lblArea:
+          Control: Label
+          Properties:
+            Text: ="Área"
+            Size: =12
+            X: =24
+            Y: =90
+            Width: =100
+            Height: =24
+      - ddArea:
+          Control: Classic/DropDown
+          Properties:
+            Items: |-
+              =["01 Tesorería", "02 Ejecutoría Coactiva", "03 Asesoría Legal", "04 Fiscalización",
+                "05 Atención al Ciudadano", "06 Recaudación", "07 Administración Tributaria",
+                "08 Contabilidad", "09 Tránsito", "10 Archivo Central"]
+            Default: ="03 Asesoría Legal"
+            OnChange: =Select(btnCargar)
+            X: =24
+            Y: =116
+            Width: =360
+            Height: =40
+      - chkSubsanadas:
+          Control: Classic/CheckBox
+          Properties:
+            Text: ="Mostrar también las ya subsanadas"
+            Default: =false
+            X: =400
+            Y: =116
+            Width: =320
+            Height: =40
+      - btnCargar:
+          Control: Classic/Button
+          Properties:
+            Text: ="Actualizar"
+            OnSelect: |-
+              =IfError(
+                Switch(Value(Left(ddArea.Selected.Value, 2)),
+                  1, ClearCollect(colObs, vObservaciones01),
+                  2, ClearCollect(colObs, vObservaciones02),
+                  3, ClearCollect(colObs, vObservaciones03),
+                  4, ClearCollect(colObs, vObservaciones04),
+                  5, ClearCollect(colObs, vObservaciones05),
+                  6, ClearCollect(colObs, vObservaciones06),
+                  7, ClearCollect(colObs, vObservaciones07),
+                  8, ClearCollect(colObs, vObservaciones08),
+                  9, ClearCollect(colObs, vObservaciones09),
+                  10, ClearCollect(colObs, vObservaciones10)),
+                Clear(colObs);
+                Notify("No tiene permiso para ver las observaciones de esta área", NotificationType.Error))
+            Fill: =RGBA(92, 45, 145, 1)
+            X: =736
+            Y: =116
+            Width: =148
+            Height: =40
+      - btnLibro:
+          Control: Classic/Button
+          Properties:
+            Text: ="Abrir carpeta del área"
+            OnSelect: |-
+              =Launch("https://unipe.sharepoint.com/sites/IntegracionDeuda/Entradas/Forms/AllItems.aspx?id=" &
+                EncodeUrl("/sites/IntegracionDeuda/Entradas/Area" & Left(ddArea.Selected.Value, 2)))
+            Fill: =RGBA(255, 255, 255, 1)
+            Color: =RGBA(92, 45, 145, 1)
+            BorderColor: =RGBA(92, 45, 145, 1)
+            BorderThickness: =1
+            X: =896
+            Y: =116
+            Width: =220
+            Height: =40
+      - lblResumen:
+          Control: Label
+          Properties:
+            Text: |-
+              =With({pend: CountRows(Filter(colObs, !Subsanada))},
+                If(CountRows(colObs) = 0, "Sin observaciones registradas para esta área",
+                  pend & " observación(es) pendiente(s) · " & (CountRows(colObs) - pend) & " subsanada(s)"))
+            Size: =12
+            Color: =RGBA(90, 90, 90, 1)
+            X: =24
+            Y: =164
+            Width: =800
+            Height: =24
+      - galObs:
+          Control: Gallery
+          Variant: Vertical
+          Properties:
+            Items: =SortByColumns(Filter(colObs, chkSubsanadas.Value || !Subsanada), "CreadoUtc", SortOrder.Descending)
+            TemplateSize: =96
+            X: =24
+            Y: =194
+            Width: =Parent.Width - 48
+            Height: =Parent.Height - 218
+          Children:
+            - lblCodigo:
+                Control: Label
+                Properties:
+                  Text: |-
+                    =If(ThisItem.FilaExcel > 0, "Fila " & ThisItem.FilaExcel, "Archivo") & "  ·  campo " & ThisItem.Campo &
+                     "  ·  " & ThisItem.Codigo
+                  FontWeight: =FontWeight.Semibold
+                  Size: =14
+                  Color: =If(ThisItem.Subsanada, RGBA(16, 124, 16, 1), RGBA(196, 43, 28, 1))
+                  X: =16
+                  Y: =6
+                  Width: =Parent.TemplateWidth - 300
+                  Height: =28
+            - lblMensaje:
+                Control: Label
+                Properties:
+                  Text: =ThisItem.Mensaje
+                  Size: =12
+                  X: =16
+                  Y: =34
+                  Width: =Parent.TemplateWidth - 32
+                  Height: =28
+            - lblLote:
+                Control: Label
+                Properties:
+                  Text: |-
+                    ="Lote " & Left(ThisItem.LoteId, 8) & " · " & ThisItem.EstadoLote & " · " &
+                     Text(ThisItem.CreadoUtc, "dd/mm/yyyy hh:mm") & " UTC" &
+                     If(ThisItem.Subsanada, " · ✔ subsanada por el lote " & Left(ThisItem.SubsanadaPor, 8), "")
+                  Size: =10
+                  Color: =RGBA(110, 110, 110, 1)
+                  X: =16
+                  Y: =62
+                  Width: =Parent.TemplateWidth - 32
+                  Height: =24
+            - recSeparador:
+                Control: Rectangle
+                Properties:
+                  Fill: =RGBA(225, 229, 235, 1)
+                  X: =0
+                  Y: =Parent.TemplateHeight - 1
+                  Width: =Parent.TemplateWidth
+                  Height: =1

@@ -1,0 +1,117 @@
+{
+  "name": "pl_base_completa",
+  "properties": {
+    "description": "Copia completa de la deuda base desde BDOrigen (SHIR) a Azure SQL y publicación atómica. Ver guía 8.4–8.6.",
+    "concurrency": 1,
+    "activities": [
+      {
+        "name": "Exportar origen",
+        "type": "Lookup",
+        "policy": { "timeout": "0.00:10:00", "retry": 2, "retryIntervalInSeconds": 60 },
+        "typeProperties": {
+          "source": { "type": "SqlServerSource", "sqlReaderStoredProcedureName": "dbo.usp_CrearExportacion" },
+          "dataset": { "referenceName": "ds_deuda_export", "type": "DatasetReference" },
+          "firstRowOnly": true
+        }
+      },
+      {
+        "name": "Iniciar carga",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [ { "activity": "Exportar origen", "dependencyConditions": [ "Succeeded" ] } ],
+        "policy": { "timeout": "0.00:05:00", "retry": 2, "retryIntervalInSeconds": 30 },
+        "linkedServiceName": { "referenceName": "ls_sql_hub", "type": "LinkedServiceReference" },
+        "typeProperties": {
+          "storedProcedureName": "dbo.usp_IniciarBaseCarga",
+          "storedProcedureParameters": {
+            "CargaId": { "value": { "value": "@pipeline().RunId", "type": "Expression" }, "type": "Guid" },
+            "CorteUtc": { "value": { "value": "@activity('Exportar origen').output.firstRow.CorteUtc", "type": "Expression" }, "type": "DateTime" },
+            "FilasEsperadas": { "value": { "value": "@activity('Exportar origen').output.firstRow.FilasEsperadas", "type": "Expression" }, "type": "Int32" }
+          }
+        }
+      },
+      {
+        "name": "Copiar base",
+        "type": "Copy",
+        "dependsOn": [ { "activity": "Iniciar carga", "dependencyConditions": [ "Succeeded" ] } ],
+        "policy": { "timeout": "0.00:30:00", "retry": 0 },
+        "inputs": [ { "referenceName": "ds_deuda_export", "type": "DatasetReference" } ],
+        "outputs": [ { "referenceName": "ds_base_fila", "type": "DatasetReference" } ],
+        "typeProperties": {
+          "source": {
+            "type": "SqlServerSource",
+            "sqlReaderQuery": {
+              "value": "SELECT PapeletaId, TipoDoc, Documento, Placa, ImporteOriginal, Activa FROM dbo.DeudaExport WHERE ExportId = '@{activity('Exportar origen').output.firstRow.ExportId}'",
+              "type": "Expression"
+            },
+            "additionalColumns": [ { "name": "CargaId", "value": { "value": "@pipeline().RunId", "type": "Expression" } } ]
+          },
+          "sink": { "type": "AzureSqlSink", "writeBehavior": "insert" },
+          "enableStaging": false,
+          "translator": {
+            "type": "TabularTranslator",
+            "mappings": [
+              { "source": { "name": "CargaId" }, "sink": { "name": "CargaId" } },
+              { "source": { "name": "PapeletaId" }, "sink": { "name": "PapeletaId" } },
+              { "source": { "name": "TipoDoc" }, "sink": { "name": "TipoDoc" } },
+              { "source": { "name": "Documento" }, "sink": { "name": "Documento" } },
+              { "source": { "name": "Placa" }, "sink": { "name": "Placa" } },
+              { "source": { "name": "ImporteOriginal" }, "sink": { "name": "ImporteOriginal" } },
+              { "source": { "name": "Activa" }, "sink": { "name": "Activa" } }
+            ]
+          }
+        }
+      },
+      {
+        "name": "Publicar base",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [ { "activity": "Copiar base", "dependencyConditions": [ "Succeeded" ] } ],
+        "policy": { "timeout": "0.00:05:00", "retry": 0 },
+        "linkedServiceName": { "referenceName": "ls_sql_hub", "type": "LinkedServiceReference" },
+        "typeProperties": {
+          "storedProcedureName": "dbo.usp_PublicarBase",
+          "storedProcedureParameters": {
+            "CargaId": { "value": { "value": "@pipeline().RunId", "type": "Expression" }, "type": "Guid" }
+          }
+        }
+      },
+      {
+        "name": "Marcar fallida (copia)",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [ { "activity": "Copiar base", "dependencyConditions": [ "Failed" ] } ],
+        "linkedServiceName": { "referenceName": "ls_sql_hub", "type": "LinkedServiceReference" },
+        "typeProperties": {
+          "storedProcedureName": "dbo.usp_MarcarBaseFallida",
+          "storedProcedureParameters": {
+            "CargaId": { "value": { "value": "@pipeline().RunId", "type": "Expression" }, "type": "Guid" },
+            "Motivo": { "value": "Fallo en la copia desde el origen", "type": "String" }
+          }
+        }
+      },
+      {
+        "name": "Marcar fallida (publicación)",
+        "type": "SqlServerStoredProcedure",
+        "dependsOn": [ { "activity": "Publicar base", "dependencyConditions": [ "Failed" ] } ],
+        "linkedServiceName": { "referenceName": "ls_sql_hub", "type": "LinkedServiceReference" },
+        "typeProperties": {
+          "storedProcedureName": "dbo.usp_MarcarBaseFallida",
+          "storedProcedureParameters": {
+            "CargaId": { "value": { "value": "@pipeline().RunId", "type": "Expression" }, "type": "Guid" },
+            "Motivo": { "value": "Validación de publicación rechazada; ver salida de la actividad", "type": "String" }
+          }
+        }
+      },
+      {
+        "name": "Fallar (copia)",
+        "type": "Fail",
+        "dependsOn": [ { "activity": "Marcar fallida (copia)", "dependencyConditions": [ "Completed" ] } ],
+        "typeProperties": { "message": "La copia de la deuda base falló; se conserva la base anterior.", "errorCode": "BASE_COPIA" }
+      },
+      {
+        "name": "Fallar (publicación)",
+        "type": "Fail",
+        "dependsOn": [ { "activity": "Marcar fallida (publicación)", "dependencyConditions": [ "Completed" ] } ],
+        "typeProperties": { "message": "usp_PublicarBase rechazó la carga; se conserva la base anterior.", "errorCode": "BASE_PUBLICACION" }
+      }
+    ]
+  }
+}

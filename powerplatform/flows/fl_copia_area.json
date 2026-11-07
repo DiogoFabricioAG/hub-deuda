@@ -1,0 +1,201 @@
+{
+  "_descripcion": "Flujo hijo (9.3–9.6): copia el libro autorizado de un área a raw/ con un LoteId nuevo y luego escribe manifests/<LoteId>.json. Si el archivo cambia durante la lectura (ETag distinto) falla sin escribir nada (T15). Lo llaman fl_copia_programada y fl_cargar_ahora.",
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": { "runtimeSource": "embedded", "connection": { "connectionReferenceLogicalName": "hd_sharepoint" }, "api": { "name": "shared_sharepointonline" } },
+      "shared_azureblob": { "runtimeSource": "embedded", "connection": { "connectionReferenceLogicalName": "hd_azureblob" }, "api": { "name": "shared_azureblob" } }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": { "defaultValue": {}, "type": "Object" },
+        "$authentication": { "defaultValue": {}, "type": "SecureObject" }
+      },
+      "triggers": {
+        "manual": {
+          "type": "Request",
+          "kind": "Button",
+          "inputs": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "text": { "title": "AreaId", "type": "string", "x-ms-dynamically-added": true, "description": "Área 1 a 10", "x-ms-content-hint": "TEXT" },
+                "text_1": { "title": "SolicitadoPor", "type": "string", "x-ms-dynamically-added": true, "description": "Identidad o flujo que solicita la carga", "x-ms-content-hint": "TEXT" }
+              },
+              "required": [ "text", "text_1" ]
+            }
+          }
+        }
+      },
+      "actions": {
+        "Lote": { "type": "Compose", "inputs": "@guid()", "runAfter": {} },
+        "Fecha": { "type": "Compose", "inputs": "@utcNow('yyyy/MM/dd')", "runAfter": { "Lote": [ "Succeeded" ] } },
+        "Area2": { "type": "Compose", "inputs": "@formatNumber(int(triggerBody()['text']), '00')", "runAfter": { "Fecha": [ "Succeeded" ] } },
+        "Copia": {
+          "type": "Scope",
+          "runAfter": { "Area2": [ "Succeeded" ] },
+          "actions": {
+            "Leer_config": {
+              "type": "OpenApiConnection",
+              "runAfter": {},
+              "inputs": {
+                "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+                "parameters": {
+                  "dataset": "__SITE__",
+                  "parameters/method": "GET",
+                  "parameters/uri": "_api/web/lists/getbytitle('ConfigAreas')/items?$select=AreaId,FileUniqueId,Activa&$filter=AreaId eq @{int(triggerBody()['text'])} and Activa eq 1",
+                  "parameters/headers": { "Accept": "application/json;odata=nometadata" }
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Area_autorizada": {
+              "type": "If",
+              "runAfter": { "Leer_config": [ "Succeeded" ] },
+              "expression": { "and": [ { "equals": [ "@length(body('Leer_config')?['value'])", 1 ] } ] },
+              "actions": {},
+              "else": {
+                "actions": {
+                  "Area_no_configurada": { "type": "Terminate", "runAfter": {}, "inputs": { "runStatus": "Failed", "runError": { "code": "AREA_NO_CONFIGURADA", "message": "El área no está activa en ConfigAreas" } } }
+                }
+              }
+            },
+            "IdArchivo": { "type": "Compose", "runAfter": { "Area_autorizada": [ "Succeeded" ] }, "inputs": "@first(body('Leer_config')?['value'])?['FileUniqueId']" },
+            "Meta_antes": {
+              "type": "OpenApiConnection",
+              "runAfter": { "IdArchivo": [ "Succeeded" ] },
+              "inputs": {
+                "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+                "parameters": {
+                  "dataset": "__SITE__",
+                  "parameters/method": "GET",
+                  "parameters/uri": "_api/web/GetFileById('@{outputs('IdArchivo')}')?$select=UniqueId,ETag,TimeLastModified,Length,UIVersionLabel",
+                  "parameters/headers": { "Accept": "application/json;odata=nometadata" }
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Contenido": {
+              "type": "OpenApiConnection",
+              "runAfter": { "Meta_antes": [ "Succeeded" ] },
+              "inputs": {
+                "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+                "parameters": {
+                  "dataset": "__SITE__",
+                  "parameters/method": "GET",
+                  "parameters/uri": "_api/web/GetFileById('@{outputs('IdArchivo')}')/$value"
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Meta_despues": {
+              "type": "OpenApiConnection",
+              "runAfter": { "Contenido": [ "Succeeded" ] },
+              "inputs": {
+                "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+                "parameters": {
+                  "dataset": "__SITE__",
+                  "parameters/method": "GET",
+                  "parameters/uri": "_api/web/GetFileById('@{outputs('IdArchivo')}')?$select=UniqueId,ETag,TimeLastModified,Length,UIVersionLabel",
+                  "parameters/headers": { "Accept": "application/json;odata=nometadata" }
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Version_consistente": {
+              "type": "If",
+              "runAfter": { "Meta_despues": [ "Succeeded" ] },
+              "expression": { "and": [ { "equals": [ "@body('Meta_antes')?['ETag']", "@body('Meta_despues')?['ETag']" ] } ] },
+              "actions": {},
+              "else": {
+                "actions": {
+                  "Archivo_cambio": { "type": "Terminate", "runAfter": {}, "inputs": { "runStatus": "Failed", "runError": { "code": "ARCHIVO_MODIFICADO_DURANTE_LECTURA", "message": "El libro cambió mientras se copiaba (ETag distinto). No se escribió nada; vuelva a solicitar la carga." } } }
+                }
+              }
+            },
+            "Guardar_raw": {
+              "type": "OpenApiConnection",
+              "runAfter": { "Version_consistente": [ "Succeeded" ] },
+              "inputs": {
+                "host": { "connectionName": "shared_azureblob", "operationId": "CreateFile_V2", "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob" },
+                "parameters": {
+                  "dataset": "__STORAGE__",
+                  "folderPath": "/raw/area@{outputs('Area2')}/@{outputs('Fecha')}",
+                  "name": "@{outputs('Lote')}.xlsx",
+                  "body": "@body('Contenido')",
+                  "queryParametersSingleEncoded": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            },
+            "Manifiesto": {
+              "type": "Compose",
+              "runAfter": { "Guardar_raw": [ "Succeeded" ] },
+              "inputs": {
+                "loteId": "@{outputs('Lote')}",
+                "areaId": "@int(triggerBody()['text'])",
+                "sourceFileId": "@{toLower(body('Meta_despues')?['UniqueId'])}",
+                "sourceVersion": "@{body('Meta_despues')?['ETag']}",
+                "sourceModifiedUtc": "@{body('Meta_despues')?['TimeLastModified']}",
+                "rawContainer": "raw",
+                "rawPath": "area@{outputs('Area2')}/@{outputs('Fecha')}/@{outputs('Lote')}.xlsx",
+                "contractVersion": "1",
+                "flowRunId": "@{workflow()?['run']?['name']}",
+                "requestedBy": "@{triggerBody()['text_1']}"
+              }
+            },
+            "Guardar_manifiesto": {
+              "type": "OpenApiConnection",
+              "runAfter": { "Manifiesto": [ "Succeeded" ] },
+              "inputs": {
+                "host": { "connectionName": "shared_azureblob", "operationId": "CreateFile_V2", "apiId": "/providers/Microsoft.PowerApps/apis/shared_azureblob" },
+                "parameters": {
+                  "dataset": "__STORAGE__",
+                  "folderPath": "/manifests",
+                  "name": "@{outputs('Lote')}.json",
+                  "body": "@{string(outputs('Manifiesto'))}",
+                  "queryParametersSingleEncoded": true
+                },
+                "authentication": "@parameters('$authentication')"
+              }
+            }
+          }
+        },
+        "Responder_recibido": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "runAfter": { "Copia": [ "Succeeded" ] },
+          "inputs": {
+            "statusCode": 200,
+            "body": { "loteid": "@{outputs('Lote')}", "estado": "RECIBIDO", "mensaje": "Carga recibida, validación pendiente" },
+            "schema": { "type": "object", "properties": {
+              "loteid": { "title": "loteid", "x-ms-dynamically-added": true, "type": "string" },
+              "estado": { "title": "estado", "x-ms-dynamically-added": true, "type": "string" },
+              "mensaje": { "title": "mensaje", "x-ms-dynamically-added": true, "type": "string" } } }
+          }
+        },
+        "Responder_error": {
+          "type": "Response",
+          "kind": "PowerApp",
+          "runAfter": { "Copia": [ "Failed", "TimedOut" ] },
+          "inputs": {
+            "statusCode": 200,
+            "body": { "loteid": "", "estado": "ERROR", "mensaje": "No se pudo copiar el libro; el responsable técnico revisa la ejecución @{workflow()?['run']?['name']}" },
+            "schema": { "type": "object", "properties": {
+              "loteid": { "title": "loteid", "x-ms-dynamically-added": true, "type": "string" },
+              "estado": { "title": "estado", "x-ms-dynamically-added": true, "type": "string" },
+              "mensaje": { "title": "mensaje", "x-ms-dynamically-added": true, "type": "string" } } }
+          }
+        },
+        "Marcar_fallo": {
+          "type": "Terminate",
+          "runAfter": { "Responder_error": [ "Succeeded" ] },
+          "inputs": { "runStatus": "Failed", "runError": { "code": "COPIA_FALLIDA", "message": "La copia del libro falló; no se creó manifiesto." } }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

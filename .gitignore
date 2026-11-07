@@ -1,0 +1,39 @@
+# Secretos y configuración local: nunca al repositorio
+local.settings.json
+*.env
+.env*
+*.publishsettings
+*.pfx
+*.pem
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Azure Functions / herramientas
+.python_packages/
+bin/
+obj/
+__azurite_db_*
+__blobstorage__/
+__queuestorage__/
+.azurite/
+
+# Datos locales de prueba
+tests/_out/
+*.bak
+*.ldf
+*.mdf
+
+# Power BI: archivos de caché locales del proyecto PBIP
+**/.pbi/cache.abf
+**/.pbi/localSettings.json
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Parámetros y salidas del despliegue con datos de la cuenta
+infra/*.local.*

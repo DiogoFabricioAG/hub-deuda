@@ -1,0 +1,4 @@
+{
+  "name": "ir-onpremise",
+  "properties": { "type": "SelfHosted", "description": "SHIR en el PC Windows que aloja BDOrigen (SQL Server Express)." }
+}

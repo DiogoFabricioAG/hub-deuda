@@ -1,0 +1,61 @@
+{
+  "_descripcion": "Copia programada (9.2–9.3): todos los días a las 13:00 y 18:00 de Lima recorre las áreas activas de ConfigAreas con concurrencia 1 y llama al flujo hijo fl_copia_area. El fallo de un área no detiene a las demás.",
+  "properties": {
+    "connectionReferences": {
+      "shared_sharepointonline": { "runtimeSource": "embedded", "connection": { "connectionReferenceLogicalName": "hd_sharepoint" }, "api": { "name": "shared_sharepointonline" } }
+    },
+    "definition": {
+      "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {
+        "$connections": { "defaultValue": {}, "type": "Object" },
+        "$authentication": { "defaultValue": {}, "type": "SecureObject" }
+      },
+      "triggers": {
+        "Recurrence": {
+          "type": "Recurrence",
+          "recurrence": {
+            "frequency": "Day",
+            "interval": 1,
+            "timeZone": "SA Pacific Standard Time",
+            "schedule": { "hours": [ "13", "18" ], "minutes": [ 0 ] }
+          }
+        }
+      },
+      "actions": {
+        "Areas_activas": {
+          "type": "OpenApiConnection",
+          "runAfter": {},
+          "inputs": {
+            "host": { "connectionName": "shared_sharepointonline", "operationId": "HttpRequest", "apiId": "/providers/Microsoft.PowerApps/apis/shared_sharepointonline" },
+            "parameters": {
+              "dataset": "__SITE__",
+              "parameters/method": "GET",
+              "parameters/uri": "_api/web/lists/getbytitle('ConfigAreas')/items?$select=AreaId&$filter=Activa eq 1&$orderby=AreaId",
+              "parameters/headers": { "Accept": "application/json;odata=nometadata" }
+            },
+            "authentication": "@parameters('$authentication')"
+          }
+        },
+        "Por_cada_area": {
+          "type": "Foreach",
+          "foreach": "@body('Areas_activas')?['value']",
+          "runAfter": { "Areas_activas": [ "Succeeded" ] },
+          "runtimeConfiguration": { "concurrency": { "repetitions": 1 } },
+          "actions": {
+            "Copiar_area": {
+              "type": "Workflow",
+              "runAfter": {},
+              "inputs": {
+                "host": { "workflowReferenceName": "__CHILD_ID__" },
+                "body": { "text": "@{formatNumber(items('Por_cada_area')?['AreaId'], '0')}", "text_1": "fl_copia_programada" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "templateName": ""
+  },
+  "schemaVersion": "1.0.0.0"
+}

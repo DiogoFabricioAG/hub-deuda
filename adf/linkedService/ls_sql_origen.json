@@ -1,0 +1,21 @@
+{
+  "name": "ls_sql_origen",
+  "properties": {
+    "type": "SqlServer",
+    "description": "BDOrigen en el SQL Server local, vía SHIR. La contraseña del lector vive en Key Vault.",
+    "connectVia": { "referenceName": "ir-onpremise", "type": "IntegrationRuntimeReference" },
+    "typeProperties": {
+      "server": "localhost\\SQLEXPRESS",
+      "database": "BDOrigen",
+      "encrypt": "optional",
+      "trustServerCertificate": true,
+      "authenticationType": "SQL",
+      "userName": "hub_lector",
+      "password": {
+        "type": "AzureKeyVaultSecret",
+        "store": { "referenceName": "ls_keyvault", "type": "LinkedServiceReference" },
+        "secretName": "bdorigen-lector"
+      }
+    }
+  }
+}

@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquitectura Hub de Deuda</title>
+<meta name="description" content="Arquitectura final del Hub de Deuda: qué corre en la nube de Microsoft, en el PC Windows y en el VPS meowlab, con sus flujos y limitantes.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --text: #1c2230;
+    --muted: #5a6375;
+    --border: #dde2ea;
+    --ink: #1c2230;
+    --on-ink: #ffffff;
+    --ms: #0f6cbd;
+    --ms-zone: #ebf3fb;
+    --ms-grp: #f7fbff;
+    --ms-soft: #9cc3e8;
+    --pc: #2e7d32;
+    --pc-zone: #edf6ee;
+    --vps: #c2571a;
+    --vps-zone: #fcf1e9;
+    --node: #ffffff;
+    --node-gray: #f1f2f4;
+    --edge: #3d4556;
+    --deploy: #7b3fb3;
+    --ctrl: #8a93a3;
+    --opt: #7d8696;
+    --limit: #c62828;
+    --limit-bg: #fdeeee;
+    --limit-ink: #8e1d1d;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e1117;
+      --surface: #161b24;
+      --text: #e5e9f0;
+      --muted: #9aa4b5;
+      --border: #2a313d;
+      --ink: #e5e9f0;
+      --on-ink: #0e1117;
+      --ms: #5fa8ee;
+      --ms-zone: #0f2236;
+      --ms-grp: #132a42;
+      --ms-soft: #2f5f8f;
+      --pc: #6cc070;
+      --pc-zone: #11241a;
+      --vps: #f0935c;
+      --vps-zone: #2a1910;
+      --node: #1a212c;
+      --node-gray: #1f242c;
+      --edge: #c3cad6;
+      --deploy: #bb8ff0;
+      --ctrl: #7f8999;
+      --opt: #8d97a8;
+      --limit: #ff7b72;
+      --limit-bg: #3a1618;
+      --limit-ink: #ffb3ad;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 36px 24px 56px; }
+  code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace;
+    font-size: 0.88em;
+    background: color-mix(in srgb, var(--border) 55%, transparent);
+    padding: 0.08em 0.35em;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  .eyebrow {
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  h1 { margin: 0 0 12px; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; letter-spacing: -0.01em; }
+  h2 { margin: 48px 0 14px; font-size: 22px; line-height: 1.25; }
+  .lede { margin: 0; max-width: 72ch; color: var(--muted); font-size: 17px; }
+
+  .answer {
+    margin: 28px 0 0;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--limit);
+    border-radius: 10px;
+    max-width: 920px;
+  }
+  .answer strong.q { display: block; font-size: 18px; margin-bottom: 4px; }
+  .answer p { margin: 0; }
+
+  .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 5px solid var(--c);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card h3 { margin: 0; font-size: 17px; }
+  .card .tag { margin: 2px 0 10px; color: var(--c); font-size: 13px; font-weight: 600; }
+  .card ul { margin: 0; padding-left: 18px; }
+  .card li { margin: 4px 0; font-size: 15px; }
+  .c-ms { --c: var(--ms); }
+  .c-pc { --c: var(--pc); }
+  .c-vps { --c: var(--vps); }
+
+  figure { margin: 20px 0 0; }
+  .diagram-scroll {
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+  }
+  .diagram-scroll svg { display: block; width: 100%; min-width: 1100px; height: auto; }
+  .hint { display: none; margin: 8px 0 0; color: var(--muted); font-size: 14px; }
+  figcaption { margin-top: 10px; color: var(--muted); font-size: 14px; }
+
+  /* SVG */
+  svg text { fill: var(--text); font-family: inherit; }
+  .zone { stroke-width: 1.6; }
+  .zone-ms { fill: var(--ms-zone); stroke: var(--ms); }
+  .zone-pc { fill: var(--pc-zone); stroke: var(--pc); }
+  .zone-vps { fill: var(--vps-zone); stroke: var(--vps); }
+  .grp { fill: var(--ms-grp); stroke: var(--ms-soft); stroke-width: 1; }
+  .node { stroke-width: 1.3; }
+  .n-ms { fill: var(--node); stroke: var(--ms); }
+  .n-pc { fill: var(--node); stroke: var(--pc); }
+  .n-vps { fill: var(--node); stroke: var(--vps); }
+  .n-gray { fill: var(--node-gray); stroke: var(--ctrl); stroke-dasharray: 4 3; }
+  .db-rim { fill: none; stroke: var(--ms); stroke-width: 1.3; }
+  .limit { fill: var(--limit-bg); stroke: var(--limit); stroke-width: 1.3; stroke-dasharray: 5 3; }
+  .actor { fill: var(--surface); stroke: var(--text); stroke-width: 1.3; }
+  svg .zt { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+  svg .zt-ms { fill: var(--ms); }
+  svg .zt-pc { fill: var(--pc); }
+  svg .zt-vps { fill: var(--vps); }
+  svg .zs { font-size: 12px; fill: var(--muted); }
+  svg .gt { font-size: 13px; font-weight: 700; }
+  svg .gs { font-size: 11px; fill: var(--muted); }
+  svg .nt { font-size: 12.5px; font-weight: 650; }
+  svg .nt-lg { font-size: 14px; font-weight: 700; }
+  svg .nt-sm { font-size: 12px; font-weight: 650; }
+  svg .nd { font-size: 11px; fill: var(--muted); }
+  svg .mono { font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace; font-size: 11px; }
+  svg .mono-strong { font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace; font-size: 12.5px; font-weight: 700; fill: var(--ms); }
+  svg .cap { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; fill: var(--ms); }
+  svg .lt { font-size: 10.8px; fill: var(--limit-ink); }
+  svg .lt-strong { font-weight: 700; fill: var(--limit); }
+  svg .at { font-size: 13px; font-weight: 600; }
+  svg .lbl { font-size: 10.5px; fill: var(--muted); }
+  .e { fill: none; stroke: var(--edge); stroke-width: 1.6; }
+  .e-deploy { fill: none; stroke: var(--deploy); stroke-width: 2; stroke-dasharray: 7 5; }
+  .e-ctrl { fill: none; stroke: var(--ctrl); stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .e-opt { fill: none; stroke: var(--opt); stroke-width: 1.8; stroke-dasharray: 1 6; stroke-linecap: round; }
+  .mk-data { fill: var(--edge); }
+  .mk-deploy { fill: var(--deploy); }
+  .mk-ctrl { fill: var(--ctrl); }
+  .mk-opt { fill: var(--opt); }
+  .b circle { fill: var(--ink); stroke: var(--surface); stroke-width: 2; }
+  .b text { fill: var(--on-ink); font-size: 11px; font-weight: 700; text-anchor: middle; }
+  .b-deploy circle { fill: var(--deploy); }
+  .b-vps circle { fill: var(--vps); }
+  .pill-opt rect { fill: var(--surface); stroke: var(--opt); stroke-width: 1; stroke-dasharray: 2 2; }
+  .pill-opt text { font-size: 10px; fill: var(--muted); font-weight: 600; text-anchor: middle; }
+
+  /* Leyenda */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    margin: 14px 0 0;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+  .legend .item { display: inline-flex; align-items: center; gap: 8px; }
+  .sw { width: 22px; height: 16px; border-radius: 4px; border: 2px solid var(--c); background: var(--z); flex-shrink: 0; }
+  .sw-ms { --c: var(--ms); --z: var(--ms-zone); }
+  .sw-pc { --c: var(--pc); --z: var(--pc-zone); }
+  .sw-vps { --c: var(--vps); --z: var(--vps-zone); }
+  .sw-limit { --c: var(--limit); --z: var(--limit-bg); border-style: dashed; }
+  .legend svg { flex-shrink: 0; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--on-ink);
+    font-size: 12.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .badge.deploy { background: var(--deploy); }
+  .badge.vps { background: var(--vps); }
+  .badge.opt { background: transparent; color: var(--muted); border: 1.5px dashed var(--opt); font-size: 11px; }
+
+  /* Flujos */
+  ol.flows { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  ol.flows li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  ol.flows li p { margin: 0; }
+  ol.flows li .where { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* Limitantes */
+  .limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .limit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--limit);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .limit-card h3 { margin: 0 0 6px; font-size: 16px; }
+  .limit-card p { margin: 4px 0 0; font-size: 15px; }
+  .limit-card .k { font-weight: 650; }
+  .limit-card.future { border-left: 4px dashed var(--opt); }
+
+  footer { margin-top: 44px; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .cards { grid-template-columns: 1fr; }
+    .limits { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 700px) {
+    .wrap { padding: 24px 16px 40px; }
+    .hint { display: block; }
+    .diagram-scroll { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <header>
+    <p class="eyebrow">Hub de Deuda · documentación técnica</p>
+    <h1>Arquitectura en tres infraestructuras</h1>
+    <p class="lede">Todo el sistema corre en la nube de Microsoft del tenant UNI. El PC Windows simula el servidor on-premise de origen y sirve para desarrollar y desplegar. El VPS meowlab solo aloja un prototipo visual con datos sintéticos y hoy no está conectado al hub.</p>
+  </header>
+
+  <section class="answer" aria-label="Respuesta corta">
+    <strong class="q">¿Power Platform puede correr en el VPS? No.</strong>
+    <p>Power Apps, Power Automate y Power BI Service son SaaS de Microsoft: no tienen instalador para servidores propios. Sus apps y flujos se ejecutan en la nube de Microsoft, dentro del entorno ligado a la cuenta UNI. El VPS tampoco puede alojar el Self-hosted Integration Runtime, que solo existe para Windows; por eso va en el PC.</p>
+  </section>
+
+  <h2>Qué corre dónde</h2>
+  <div class="cards">
+    <article class="card c-ms">
+      <h3>Nube de Microsoft</h3>
+      <p class="tag">SaaS/PaaS · tenant UNI · todo el sistema</p>
+      <ul>
+        <li>Microsoft 365: sitio SharePoint <code>IntegracionDeuda</code> (Entradas, ConfigAreas, Plantillas, Reportes, Evidencias), Outlook y Teams.</li>
+        <li>Power Platform, entorno Developer, solución <code>HubDeuda</code>: flujos de copia, avisos y reporte; apps ConsultaDeuda y Mis observaciones.</li>
+        <li>Azure <code>rg-hubdeuda-dev</code>: Storage, Function App, Azure SQL <code>HubDeuda</code>, Data Factory, Key Vault, Application Insights y Entra ID.</li>
+        <li>Power BI Service: tablero Resumen, Integración y Calidad.</li>
+      </ul>
+    </article>
+    <article class="card c-pc">
+      <h3>PC Windows 11 del usuario</h3>
+      <p class="tag">On-premise simulado + estación de desarrollo</p>
+      <ul>
+        <li>SQL Server Express <code>localhost\SQLEXPRESS</code> con <code>BDOrigen.dbo.DeudaOrigen</code> (3 deudas ficticias).</li>
+        <li>Self-hosted Integration Runtime: solo Windows, conexiones salientes.</li>
+        <li>Repositorio Git <code>D:\hub-deuda-azure</code>, CLIs de despliegue y Power BI Desktop.</li>
+      </ul>
+    </article>
+    <article class="card c-vps">
+      <h3>VPS meowlab</h3>
+      <p class="tag">Prototipo independiente · fuera de Azure</p>
+      <ul>
+        <li>Caddy sirve <code>meowlab.tech</code>: <code>/debt-hub/</code> → nginx <code>hub-deuda-staging</code>.</li>
+        <li><code>/debt-hub/api/*</code> → <code>hub-deuda-api-v4</code> (Python + SQLite, datos sintéticos).</li>
+        <li>También aloja otros sitios y el agente Hermes. Hoy no está conectado a Azure ni a Power Platform.</li>
+      </ul>
+    </article>
+  </div>
+
+  <h2>Diagrama</h2>
+  <figure>
+    <div class="diagram-scroll">
+<svg viewBox="0 0 1240 1050" role="img" aria-labelledby="svg-t svg-d" xmlns="http://www.w3.org/2000/svg">
+  <title id="svg-t">Arquitectura del Hub de Deuda en tres infraestructuras</title>
+  <desc id="svg-d">Arriba, la nube de Microsoft con Microsoft 365, Power Platform, Power BI Service y Azure. Abajo a la derecha, el PC Windows con SQL Server Express, el Self-hosted Integration Runtime y las herramientas de despliegue. Abajo a la izquierda, el VPS meowlab con el prototipo, sin conexión con el hub salvo una opción futura no planificada.</desc>
+  <defs>
+    <marker id="mk-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="mk-data" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="mk-deploy" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="mk-deploy" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="mk-ctrl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="mk-ctrl" d="M0,0 L10,5 L0,10 z"/></marker>
+    <marker id="mk-opt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" markerUnits="userSpaceOnUse" orient="auto-start-reverse"><path class="mk-opt" d="M0,0 L10,5 L0,10 z"/></marker>
+  </defs>
+
+  <!-- ===== Zonas (infraestructuras) ===== -->
+  <rect class="zone zone-ms" x="10" y="60" width="1220" height="600" rx="16"/>
+  <text class="zt zt-ms" x="30" y="88">NUBE DE MICROSOFT</text>
+  <text class="zs" x="330" y="88">Tenant UNI · SaaS/PaaS en centros de datos de Microsoft · nada se autoaloja</text>
+
+  <rect class="zone zone-vps" x="10" y="690" width="590" height="300" rx="16"/>
+  <text class="zt zt-vps" x="30" y="716">VPS «MEOWLAB»</text>
+  <text class="zs" x="30" y="734">Ubuntu · Docker · fuera de la arquitectura Azure · datos sintéticos</text>
+
+  <rect class="zone zone-pc" x="620" y="690" width="610" height="240" rx="16"/>
+  <text class="zt zt-pc" x="640" y="716">PC WINDOWS 11 DEL USUARIO</text>
+  <text class="zs" x="640" y="734">on-premise simulado + estación de desarrollo</text>
+
+  <!-- ===== Grupos dentro de la nube ===== -->
+  <rect class="grp" x="30" y="110" width="270" height="414" rx="10"/>
+  <text class="gt" x="45" y="132">Microsoft 365</text>
+  <text class="gs" x="45" y="148">SharePoint IntegracionDeuda</text>
+
+  <rect class="grp" x="320" y="110" width="270" height="414" rx="10"/>
+  <text class="gt" x="335" y="132">Power Platform</text>
+  <text class="gs" x="335" y="148">entorno Developer · solución HubDeuda</text>
+  <text class="lt" x="335" y="516"><tspan class="lt-strong">Developer Plan:</tspan> solo el dueño usa Premium</text>
+
+  <rect class="grp" x="620" y="110" width="590" height="530" rx="10"/>
+  <text class="gt" x="635" y="132">Azure · rg-hubdeuda-dev</text>
+  <text class="gs" x="635" y="148">Azure for Students · crédito ≈ USD 100 · regiones limitadas</text>
+
+  <!-- ===== Microsoft 365 ===== -->
+  <rect class="node n-ms" x="45" y="158" width="240" height="78" rx="7"/>
+  <text class="nt" x="57" y="178">Biblioteca Entradas</text>
+  <text class="nd" x="57" y="196">Area01..Area10/movimientos.xlsx</text>
+  <text class="nd" x="57" y="213">tabla tblMovimientos</text>
+
+  <rect class="node n-ms" x="45" y="296" width="240" height="58" rx="7"/>
+  <text class="nt" x="57" y="320">Outlook / Teams</text>
+  <text class="nd" x="57" y="338">reciben los avisos</text>
+
+  <rect class="node n-ms" x="45" y="370" width="240" height="58" rx="7"/>
+  <text class="nt" x="57" y="394">Bibliotecas</text>
+  <text class="nd" x="57" y="412">Plantillas · Reportes · Evidencias</text>
+
+  <rect class="node n-ms" x="45" y="444" width="240" height="58" rx="7"/>
+  <text class="nt" x="57" y="468">Lista ConfigAreas</text>
+  <text class="nd" x="57" y="486">configuración de las áreas</text>
+
+  <!-- ===== Power Platform ===== -->
+  <rect class="node n-ms" x="335" y="158" width="240" height="78" rx="7"/>
+  <text class="nt" x="347" y="176">Power Automate · copia</text>
+  <text class="nd" x="347" y="193">fl_copia_programada</text>
+  <text class="nd" x="347" y="208">13:00 y 18:00 (hora de Lima)</text>
+  <text class="nd" x="347" y="223">fl_cargar_area («Cargar ahora»)</text>
+
+  <rect class="node n-ms" x="335" y="296" width="240" height="58" rx="7"/>
+  <text class="nt" x="347" y="320">Flujo de avisos</text>
+  <text class="nd" x="347" y="338">lee dbo.Notificacion</text>
+
+  <rect class="node n-ms" x="335" y="370" width="240" height="58" rx="7"/>
+  <text class="nt" x="347" y="394">fl_reporte_deuda</text>
+  <text class="nd" x="347" y="412">plantilla Word → PDF</text>
+
+  <rect class="node n-ms" x="335" y="444" width="240" height="58" rx="7"/>
+  <text class="nt" x="347" y="468">Power Apps</text>
+  <text class="nd" x="347" y="486">ConsultaDeuda · Mis observaciones</text>
+
+  <!-- ===== Limitante de la nube y Power BI Service ===== -->
+  <rect class="limit" x="30" y="540" width="270" height="100" rx="8"/>
+  <text class="lt lt-strong" x="44" y="560">LIMITANTE</text>
+  <text class="lt" x="44" y="577">Power Platform y Power BI Service son</text>
+  <text class="lt" x="44" y="593">SaaS de Microsoft: se ejecutan aquí,</text>
+  <text class="lt" x="44" y="609">ligados a la cuenta UNI. No se instalan</text>
+  <text class="lt" x="44" y="625">en el VPS ni en otro servidor propio.</text>
+
+  <rect class="node n-ms" x="320" y="540" width="270" height="100" rx="7"/>
+  <text class="nt" x="335" y="561">Power BI Service</text>
+  <text class="nd" x="335" y="579">tablero Resumen · Integración · Calidad</text>
+  <text class="lt" x="335" y="597">compartir requiere Pro / PPU / Fabric</text>
+  <text class="lt" x="335" y="613">gratis: solo «Mi área de trabajo»</text>
+
+  <!-- ===== Azure ===== -->
+  <rect class="node n-ms" x="640" y="158" width="190" height="78" rx="7"/>
+  <text class="nt" x="652" y="178">Storage de negocio</text>
+  <text class="nd" x="652" y="196">contenedores</text>
+  <text class="nd" x="652" y="213">raw · manifests · reports</text>
+
+  <rect class="node n-ms" x="870" y="158" width="320" height="78" rx="7"/>
+  <text class="nt" x="882" y="176">Function App (Python)</text>
+  <text class="nd" x="882" y="193">timer cada minuto: lee manifiestos,</text>
+  <text class="nd" x="882" y="208">valida el Excel y calcula SHA-256;</text>
+  <text class="nd" x="882" y="223">publica atómico con sp_getapplock</text>
+
+  <path class="node n-ms" d="M640 290 A130 14 0 0 1 900 290 V612 A130 14 0 0 1 640 612 Z"/>
+  <path class="db-rim" d="M640 290 A130 14 0 0 0 900 290"/>
+  <text class="nt-lg" x="656" y="322">Azure SQL Database</text>
+  <text class="mono-strong" x="656" y="339">HubDeuda</text>
+  <text class="cap" x="656" y="364">TABLAS</text>
+  <text class="nd" x="656" y="381">Area · Lote · Movimiento</text>
+  <text class="nd" x="656" y="397">Observacion · Notificacion</text>
+  <text class="nd" x="656" y="413">BaseCarga · BaseFila · BaseActual</text>
+  <text class="cap" x="656" y="439">VISTAS</text>
+  <text class="nd" x="656" y="456">vDeuda · vEstadoFuentes</text>
+  <text class="nd" x="656" y="472">vMovimientoDetalle</text>
+  <text class="nd" x="656" y="488">vObservaciones01..10</text>
+  <text class="cap" x="656" y="514">PROCEDIMIENTOS</text>
+  <text class="nd" x="656" y="531">usp_PublicarBase</text>
+  <text class="nd" x="656" y="547">usp_PublicarArea</text>
+
+  <rect class="node n-ms" x="940" y="290" width="250" height="44" rx="7"/>
+  <text class="nt" x="952" y="308">Storage del runtime</text>
+  <text class="nd" x="952" y="325">estado interno de Functions</text>
+
+  <rect class="node n-ms" x="940" y="346" width="250" height="44" rx="7"/>
+  <text class="nt" x="952" y="364">Application Insights</text>
+  <text class="nd" x="952" y="381">Log Analytics · telemetría</text>
+
+  <rect class="node n-ms" x="940" y="402" width="250" height="44" rx="7"/>
+  <text class="nt" x="952" y="420">Entra ID</text>
+  <text class="nd" x="952" y="437">usuarios e identidades administradas</text>
+
+  <rect class="node n-ms" x="940" y="458" width="250" height="44" rx="7"/>
+  <text class="nt" x="952" y="476">Key Vault</text>
+  <text class="nd" x="952" y="493">secreto del lector de BDOrigen</text>
+
+  <rect class="node n-ms" x="940" y="532" width="250" height="80" rx="7"/>
+  <text class="nt" x="952" y="554">Azure Data Factory</text>
+  <text class="nd" x="952" y="572">pl_base_completa</text>
+  <text class="nd" x="952" y="589">disparador cada hora</text>
+
+  <!-- ===== PC Windows ===== -->
+  <rect class="limit" x="960" y="698" width="200" height="42" rx="7"/>
+  <text class="lt lt-strong" x="970" y="714">LIMITANTE: encendido y sin</text>
+  <text class="lt" x="970" y="730">suspensión en la carga horaria</text>
+
+  <rect class="node n-pc" x="640" y="750" width="260" height="78" rx="7"/>
+  <text class="nt" x="652" y="770">SQL Server Express</text>
+  <text class="mono" x="652" y="787">localhost\SQLEXPRESS</text>
+  <text class="mono" x="652" y="803">BDOrigen.dbo.DeudaOrigen</text>
+  <text class="nd" x="652" y="819">3 deudas ficticias (P0001–P0003)</text>
+
+  <rect class="node n-pc" x="940" y="750" width="250" height="78" rx="7"/>
+  <text class="nt" x="952" y="770">Self-hosted Integration Runtime</text>
+  <text class="nd" x="952" y="787">servicio de Windows</text>
+  <text class="nd" x="952" y="803">sale por HTTPS 443 hacia ADF</text>
+  <text class="nd" x="952" y="819">sale por 1433 hacia Azure SQL</text>
+
+  <rect class="node n-pc" x="640" y="846" width="550" height="66" rx="7"/>
+  <text class="nt" x="654" y="866">Repositorio Git D:\hub-deuda-azure · Power BI Desktop</text>
+  <text class="nd" x="654" y="883">Azure CLI · Functions Core Tools · Power Platform CLI (pac) · CLI for Microsoft 365</text>
+  <text class="nd" x="654" y="900">pruebas locales contra SQL Express · inicia sesión con la cuenta UNI</text>
+
+  <!-- ===== VPS meowlab ===== -->
+  <rect class="node n-vps" x="30" y="752" width="150" height="110" rx="7"/>
+  <text class="nt" x="42" y="773">Caddy</text>
+  <text class="nd" x="42" y="791">facturaya-ai-caddy-1</text>
+  <text class="nd" x="42" y="807">https://meowlab.tech</text>
+  <text class="nd" x="42" y="823">proxy inverso HTTPS</text>
+
+  <rect class="node n-vps" x="220" y="752" width="350" height="64" rx="7"/>
+  <text class="nt" x="232" y="771">hub-deuda-api-v4 · /debt-hub/api/*</text>
+  <text class="nd" x="232" y="788">Python stdlib + SQLite en volumen · datos sintéticos</text>
+  <text class="nd" x="232" y="804">red interna hub-deuda-private · sesión por navegador</text>
+
+  <rect class="node n-vps" x="220" y="828" width="350" height="48" rx="7"/>
+  <text class="nt" x="232" y="848">hub-deuda-staging (nginx) · /debt-hub/</text>
+  <text class="nd" x="232" y="866">frontend estático del prototipo</text>
+
+  <rect class="node n-gray" x="220" y="888" width="170" height="40" rx="7"/>
+  <text class="nt-sm" x="232" y="905">hub-deuda-demo</text>
+  <text class="nd" x="232" y="920">viejo · sin tráfico</text>
+
+  <rect class="node n-gray" x="400" y="888" width="170" height="40" rx="7"/>
+  <text class="nt-sm" x="412" y="905">Otros sitios y Hermes</text>
+  <text class="nd" x="412" y="920">ajenos al hub</text>
+
+  <rect class="limit" x="220" y="938" width="350" height="42" rx="7"/>
+  <text class="lt" x="232" y="955"><tspan class="lt-strong">LIMITANTE:</tspan> no puede alojar Power Platform ni</text>
+  <text class="lt" x="232" y="971">Power BI Service (SaaS) ni el SHIR (solo Windows)</text>
+
+  <!-- ===== Actores ===== -->
+  <rect class="actor" x="40" y="12" width="260" height="34" rx="17"/>
+  <text class="at" x="170" y="34" text-anchor="middle">Personas de las áreas 01–10</text>
+
+  <rect class="actor" x="30" y="1004" width="180" height="34" rx="17"/>
+  <text class="at" x="120" y="1026" text-anchor="middle">Navegador público</text>
+
+  <!-- ===== Flechas de datos ===== -->
+  <line class="e" x1="250" y1="46" x2="250" y2="157" marker-end="url(#mk-data)"/>
+  <line class="e" x1="285" y1="197" x2="334" y2="197" marker-end="url(#mk-data)"/>
+  <line class="e" x1="575" y1="197" x2="639" y2="197" marker-end="url(#mk-data)"/>
+  <line class="e" x1="830" y1="197" x2="869" y2="197" marker-end="url(#mk-data)"/>
+  <line class="e" x1="885" y1="236" x2="885" y2="283" marker-end="url(#mk-data)"/>
+  <line class="e" x1="640" y1="325" x2="576" y2="325" marker-end="url(#mk-data)"/>
+  <line class="e" x1="335" y1="325" x2="286" y2="325" marker-end="url(#mk-data)"/>
+  <line class="e" x1="640" y1="399" x2="576" y2="399" marker-end="url(#mk-data)"/>
+  <line class="e" x1="334" y1="399" x2="286" y2="399" marker-start="url(#mk-data)" marker-end="url(#mk-data)"/>
+  <line class="e" x1="640" y1="473" x2="576" y2="473" marker-end="url(#mk-data)"/>
+  <line class="e" x1="640" y1="590" x2="591" y2="590" marker-end="url(#mk-data)"/>
+  <line class="e" x1="940" y1="572" x2="901" y2="572" marker-end="url(#mk-data)"/>
+  <line class="e" x1="900" y1="789" x2="939" y2="789" marker-end="url(#mk-data)"/>
+  <line class="e" x1="955" y1="750" x2="903" y2="603" marker-end="url(#mk-data)"/>
+  <line class="e" x1="1175" y1="750" x2="1175" y2="613" marker-end="url(#mk-data)"/>
+  <line class="e" x1="60" y1="1004" x2="60" y2="863" marker-end="url(#mk-data)"/>
+  <line class="e" x1="180" y1="784" x2="219" y2="784" marker-end="url(#mk-data)"/>
+  <line class="e" x1="180" y1="850" x2="219" y2="850" marker-end="url(#mk-data)"/>
+
+  <!-- Credencial (no es flujo numerado) -->
+  <line class="e-ctrl" x1="1065" y1="502" x2="1065" y2="531" marker-end="url(#mk-ctrl)"/>
+  <text class="lbl" x="1073" y="521">secreto</text>
+
+  <!-- Despliegue (flujo 9) -->
+  <path class="e-deploy" d="M1190 879 H1212 V662" marker-end="url(#mk-deploy)"/>
+
+  <!-- Opción futura, no planificada -->
+  <line class="e-opt" x1="690" y1="626" x2="562" y2="751" marker-end="url(#mk-opt)"/>
+  <g class="pill-opt"><rect x="612" y="663" width="60" height="18" rx="9"/><text x="642" y="676">opcional</text></g>
+
+  <!-- Etiquetas de puertos -->
+  <text class="lbl" x="945" y="680">1433 · BaseFila</text>
+  <text class="lbl" x="1162" y="680" text-anchor="end">443 saliente</text>
+  <text class="lbl" x="78" y="928">HTTPS</text>
+  <text class="lbl" x="78" y="943">meowlab.tech/debt-hub/</text>
+
+  <!-- ===== Números de flujo ===== -->
+  <g class="b"><circle cx="250" cy="98" r="10"/><text x="250" y="102">1</text></g>
+  <g class="b"><circle cx="310" cy="197" r="10"/><text x="310" y="201">2</text></g>
+  <g class="b"><circle cx="605" cy="197" r="10"/><text x="605" y="201">2</text></g>
+  <g class="b"><circle cx="850" cy="197" r="10"/><text x="850" y="201">3</text></g>
+  <g class="b"><circle cx="885" cy="259" r="10"/><text x="885" y="263">3</text></g>
+  <g class="b"><circle cx="920" cy="572" r="10"/><text x="920" y="576">4</text></g>
+  <g class="b"><circle cx="920" cy="789" r="10"/><text x="920" y="793">4</text></g>
+  <g class="b"><circle cx="929" cy="676" r="10"/><text x="929" y="680">4</text></g>
+  <g class="b"><circle cx="1175" cy="676" r="10"/><text x="1175" y="680">4</text></g>
+  <g class="b"><circle cx="605" cy="473" r="10"/><text x="605" y="477">5</text></g>
+  <g class="b"><circle cx="605" cy="590" r="10"/><text x="605" y="594">6</text></g>
+  <g class="b"><circle cx="605" cy="325" r="10"/><text x="605" y="329">7</text></g>
+  <g class="b"><circle cx="310" cy="325" r="10"/><text x="310" y="329">7</text></g>
+  <g class="b"><circle cx="605" cy="399" r="10"/><text x="605" y="403">8</text></g>
+  <g class="b"><circle cx="310" cy="399" r="10"/><text x="310" y="403">8</text></g>
+  <g class="b b-deploy"><circle cx="1212" cy="790" r="10"/><text x="1212" y="794">9</text></g>
+  <g class="b b-vps"><circle cx="60" cy="935" r="11"/><text x="60" y="939">10</text></g>
+</svg>
+    </div>
+    <p class="hint">Desliza el diagrama hacia los lados para verlo completo.</p>
+    <figcaption>Las flechas continuas siguen el sentido en que viajan los datos. Cada número corresponde a un flujo de la lista de abajo.</figcaption>
+  </figure>
+
+  <div class="legend" aria-label="Leyenda">
+    <span class="item"><span class="sw sw-ms"></span>Nube de Microsoft (tenant UNI)</span>
+    <span class="item"><span class="sw sw-pc"></span>PC Windows 11 del usuario</span>
+    <span class="item"><span class="sw sw-vps"></span>VPS meowlab</span>
+    <span class="item"><span class="sw sw-limit"></span>Limitante</span>
+    <span class="item"><svg width="44" height="12" viewBox="0 0 44 12" aria-hidden="true"><line class="e" x1="2" y1="6" x2="34" y2="6"/><path class="mk-data" d="M34,1.5 L42,6 L34,10.5 z"/></svg>Flujo de datos</span>
+    <span class="item"><svg width="44" height="12" viewBox="0 0 44 12" aria-hidden="true"><line class="e-deploy" x1="2" y1="6" x2="34" y2="6"/><path class="mk-deploy" d="M34,1.5 L42,6 L34,10.5 z"/></svg>Despliegue (flujo 9, no son datos)</span>
+    <span class="item"><svg width="44" height="12" viewBox="0 0 44 12" aria-hidden="true"><line class="e-ctrl" x1="2" y1="6" x2="34" y2="6"/><path class="mk-ctrl" d="M34,1.5 L42,6 L34,10.5 z"/></svg>Credencial desde Key Vault</span>
+    <span class="item"><svg width="44" height="12" viewBox="0 0 44 12" aria-hidden="true"><line class="e-opt" x1="3" y1="6" x2="34" y2="6"/><path class="mk-opt" d="M34,1.5 L42,6 L34,10.5 z"/></svg>Opción futura, no planificada</span>
+    <span class="item"><span class="badge">n</span>Número de flujo</span>
+  </div>
+
+  <h2>Flujos numerados</h2>
+  <ol class="flows">
+    <li><span class="badge">1</span><p><strong>Registro.</strong> Las personas de cada área (01–10) editan <code>movimientos.xlsx</code> (tabla <code>tblMovimientos</code>) en su carpeta de la biblioteca Entradas de SharePoint.<span class="where">Microsoft 365</span></p></li>
+    <li><span class="badge">2</span><p><strong>Copia y manifiesto.</strong> Power Automate (<code>fl_copia_programada</code> a las 13:00 y 18:00 hora de Lima, o <code>fl_cargar_area</code> con el botón «Cargar ahora») copia el Excel original al contenedor <code>raw</code> de Blob y, después, escribe <code>manifests/‹LoteId›.json</code>.<span class="where">Power Platform → Azure Storage</span></p></li>
+    <li><span class="badge">3</span><p><strong>Validación y publicación por área.</strong> La Azure Function (timer cada minuto) lee el manifiesto y el archivo de <code>raw</code>, valida el Excel, calcula SHA-256 y publica de forma atómica en Azure SQL (<code>sp_getapplock</code> + <code>usp_PublicarArea</code>). Si el archivo tiene errores, registra <code>Observacion</code> y deja el aviso en <code>Notificacion</code>.<span class="where">Azure</span></p></li>
+    <li><span class="badge">4</span><p><strong>Deuda base desde el on-premise.</strong> Cada hora, ADF (<code>pl_base_completa</code>) coordina la carga: el SHIR del PC mantiene una conexión saliente HTTPS 443 con ADF, lee <code>BDOrigen</code> en SQL Server Express, escribe la fotografía en <code>BaseFila</code> de Azure SQL por 1433 y ADF publica con <code>usp_PublicarBase</code>. La credencial del lector de <code>BDOrigen</code> sale de Key Vault.<span class="where">PC Windows → Azure</span></p></li>
+    <li><span class="badge">5</span><p><strong>Consulta.</strong> Power Apps lee Azure SQL con el conector SQL Server: ConsultaDeuda busca por DNI/RUC, placa o papeleta en <code>vDeuda</code>; «Mis observaciones» muestra <code>vObservaciones01..10</code> (cada área solo la suya).<span class="where">Azure → Power Platform</span></p></li>
+    <li><span class="badge">6</span><p><strong>Tablero.</strong> Power BI Service lee las vistas del hub para las páginas Resumen, Integración y Calidad.<span class="where">Azure → Power BI Service</span></p></li>
+    <li><span class="badge">7</span><p><strong>Avisos.</strong> El flujo de avisos lee <code>dbo.Notificacion</code> y envía el aviso por Outlook o Teams.<span class="where">Azure → Power Platform → Microsoft 365</span></p></li>
+    <li><span class="badge">8</span><p><strong>Reporte.</strong> <code>fl_reporte_deuda</code> toma la plantilla Word de Plantillas, la llena con datos de las vistas del hub y guarda el PDF en Reportes.<span class="where">Azure → Power Platform ↔ Microsoft 365</span></p></li>
+    <li><span class="badge deploy">9</span><p><strong>Despliegue (no es un flujo de datos).</strong> Desde el PC, con la sesión UNI del usuario: <code>az</code> y <code>func</code> → Azure; <code>pac</code> → Power Platform; <code>m365</code> → SharePoint; Power BI Desktop → Power BI Service.<span class="where">PC Windows → nube de Microsoft</span></p></li>
+    <li><span class="badge vps">10</span><p><strong>Prototipo (independiente).</strong> Un navegador público abre <code>https://meowlab.tech/debt-hub/</code>. Caddy envía <code>/debt-hub/</code> a <code>hub-deuda-staging</code> (nginx) y <code>/debt-hub/api/*</code> a <code>hub-deuda-api-v4</code>. Usa datos sintéticos y no toca Azure ni Power Platform.<span class="where">Internet → VPS meowlab</span></p></li>
+    <li><span class="badge opt">opc.</span><p><strong>Opcional, futuro y no planificado.</strong> El prototipo del VPS podría leer en solo lectura una API o vistas del hub en Azure. Requeriría autenticación y no se implementa ahora.<span class="where">Azure → VPS meowlab (punteado)</span></p></li>
+  </ol>
+
+  <h2>Limitantes y por qué</h2>
+  <div class="limits">
+    <article class="limit-card">
+      <h3>Power Platform no se instala en el VPS</h3>
+      <p><span class="k">Por qué:</span> Power Apps y Power Automate son SaaS. Microsoft los ejecuta en su nube y cada app o flujo pertenece a un entorno del tenant UNI.</p>
+      <p><span class="k">Consecuencia:</span> todo lo de Power Platform vive en la nube de Microsoft. El VPS no participa en el hub.</p>
+    </article>
+    <article class="limit-card">
+      <h3>Power BI Service tampoco</h3>
+      <p><span class="k">Por qué:</span> también es SaaS. Publicar en un workspace compartido requiere Pro, PPU o Fabric; con licencia gratuita solo existe «Mi área de trabajo».</p>
+      <p><span class="k">Consecuencia:</span> el modelo se hace en Power BI Desktop (PC) y se publica en «Mi área de trabajo» para demostrar, no para compartir.</p>
+    </article>
+    <article class="limit-card">
+      <h3>El SHIR no puede ir en el VPS</h3>
+      <p><span class="k">Por qué:</span> el Self-hosted Integration Runtime solo existe para Windows y el VPS es Ubuntu.</p>
+      <p><span class="k">Consecuencia:</span> el SHIR se instala en el PC, junto a SQL Server Express.</p>
+    </article>
+    <article class="limit-card">
+      <h3>El PC debe estar encendido en las cargas horarias</h3>
+      <p><span class="k">Por qué:</span> el SHIR y <code>BDOrigen</code> viven en el PC; si se apaga o suspende, ADF no puede leer el origen.</p>
+      <p><span class="k">Consecuencia:</span> la carga de esa hora falla sin dañar nada. La última base válida sigue publicada y <code>vEstadoFuentes</code> muestra el corte atrasado (pruebas T13/T14).</p>
+    </article>
+    <article class="limit-card">
+      <h3>El SQL local nunca se expone a Internet</h3>
+      <p><span class="k">Por qué:</span> el SHIR inicia conexiones salientes (HTTPS 443 hacia ADF y 1433 hacia Azure SQL); no se abren puertos de entrada en el PC.</p>
+      <p><span class="k">Consecuencia:</span> la red del PC debe permitir la salida por 443 y 1433.</p>
+    </article>
+    <article class="limit-card">
+      <h3>Developer Plan: solo el dueño usa lo Premium</h3>
+      <p><span class="k">Por qué:</span> el plan gratuito es individual y los conectores SQL Server y Azure Blob son Premium.</p>
+      <p><span class="k">Consecuencia:</span> alcanza para construir y presentar. Cada integrante que quiera usar las apps necesita su propio Developer Plan o una licencia.</p>
+    </article>
+    <article class="limit-card">
+      <h3>Azure for Students limita regiones y presupuesto</h3>
+      <p><span class="k">Por qué:</span> la suscripción tiene una política de regiones permitidas y un crédito de unos USD 100.</p>
+      <p><span class="k">Consecuencia:</span> se despliega en una región permitida, con alertas de presupuesto. Al terminar el curso se apagan los disparadores y se elimina <code>rg-hubdeuda-dev</code>.</p>
+    </article>
+    <article class="limit-card future">
+      <h3>El VPS no está conectado al hub</h3>
+      <p><span class="k">Por qué:</span> es un prototipo de demostración con datos sintéticos, fuera del tenant UNI.</p>
+      <p><span class="k">Opción futura (no planificada):</span> consumir en solo lectura una API o vistas del hub en Azure, con autenticación propia y permisos mínimos. No se implementa ahora.</p>
+    </article>
+  </div>
+
+  <footer>Mismo contenido que <code>docs/ARQUITECTURA.md</code> · noviembre de 2026.</footer>
+</main>
+</body>
+</html>
