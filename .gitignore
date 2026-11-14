@@ -40,3 +40,4 @@ infra/*.local.*
 
 # Datos de demostración on-premise (Excel de las áreas, raw, manifiestos, estado del worker)
 datos_onprem/
+datos_500k/

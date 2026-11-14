@@ -13,7 +13,7 @@ actor "Jefaturas" as JEF #FCE4EC
 rectangle "EMPRESA · on-premise (datos sensibles, sin puertos de entrada)" as ONPREM #F5F5F5 {
   folder "Carpetas por área\n(Excel original + copia raw inmutable)" as CARPETAS #FFE0B2
   component "Worker\ndetecta el cambio (SHA-256)\nmapea y sanea con registro" as WORKER #FFE0B2
-  component "Validador todo o nada\nvalida todas las filas\npublica el lote completo" as API #C8E6C9
+  component "Validador\ntodo o nada: valida todas las filas\ny publica el lote completo" as API #C8E6C9
   database "SQL Server único\nlotes · movimientos · correcciones" as HUB #FFF59D
   database "BDOrigen\ndeuda base (≈ 90 %)" as ORIGEN #FFF59D
   database "Vistas de lectura\n(solo lectura, por área)" as VISTAS #FFF59D

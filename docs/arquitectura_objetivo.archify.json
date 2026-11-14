@@ -72,8 +72,8 @@
     {
       "id": "validador",
       "type": "backend",
-      "label": "Validador todo o nada",
-      "sublabel": "valida todas las filas · publica el lote",
+      "label": "Validador",
+      "sublabel": "todo o nada · valida y publica",
       "pos": [
         870,
         40

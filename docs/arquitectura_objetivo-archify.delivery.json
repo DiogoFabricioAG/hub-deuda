@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "ee0d6090-ff6a-4151-b266-f4a4bd754a95",
+  "receiptId": "7c6e5510-7d19-4907-a33b-79c30e577e96",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "D:\\hub-deuda-azure\\docs\\arquitectura_objetivo.archify.json",
   "output": "D:\\hub-deuda-azure\\docs\\arquitectura_objetivo-archify.html",
   "specification": {
-    "sha256": "4a9d48473eacded61bcac8db0fae9d99fa7560f8236614a1027e534aa1563c98",
-    "bytes": 7353
+    "sha256": "454ee27cbaefd745c7b98de4aa508ddd8a93934996fdd302bb1a4b4c87856f18",
+    "bytes": 7680
   },
   "artifact": {
-    "sha256": "47c6facbe19607d58634157079adc75a36dc7af633d1a58430c9081529b0c3d1",
-    "bytes": 858289
+    "sha256": "4454bff705a7fa219a240611db0f208217c9dc8c3ca88ba0cdf42835caaca7fe",
+    "bytes": 858199
   }
 }
