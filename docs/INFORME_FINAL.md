@@ -117,7 +117,7 @@ La latencia es la espera del siguiente sondeo más el proceso (menos de 1 s para
 
 ![Consulta de deuda leyendo del SQL local por el gateway (14 nov)](../evidencias/2026-11-14_app-consulta-onprem-gateway.jpg)
 
-![Mis observaciones leyendo del SQL local por el gateway (14 nov). Captura anterior al retiro de los botones «Abrir carpeta del área» y «Cargar ahora», que dependían de SharePoint y Azure](../evidencias/2026-11-14_app-observaciones-onprem-gateway.jpg)
+![Mis observaciones leyendo del SQL local por el gateway (14 nov): la observación del lote rechazado de Tesorería, sin los botones que dependían de SharePoint y Azure](../evidencias/2026-11-14_app-observaciones-onprem-gateway.jpg)
 
 ![Versión Azure: saldo de la papeleta P0001 (7 nov)](../evidencias/2026-11-07_app-consulta-P0001-saldo-75.jpg)
 
