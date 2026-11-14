@@ -130,7 +130,7 @@ def procesar_manifiesto(nombre, almacen, conectar=sqlconn.conectar):
         raise repo.ErrorTecnico("El archivo raw aún no existe")
     if tam > MAX_BYTES:
         from validacion import Resultado
-        res = Resultado(huella="0" * 64, errores=[_obs("ARCHIVO_INVALIDO", "Archivo mayor que 10 MiB")])
+        res = Resultado(huella="0" * 64, errores=[_obs("ARCHIVO_INVALIDO", "Archivo mayor que el límite permitido")])
     else:
         res = validar(almacen.leer("raw", m.raw_path), m.area_id, papeletas, ctx["tipo_permitido"])
 

@@ -37,3 +37,6 @@ Thumbs.db
 
 # Parámetros y salidas del despliegue con datos de la cuenta
 infra/*.local.*
+
+# Datos de demostración on-premise (Excel de las áreas, raw, manifiestos, estado del worker)
+datos_onprem/

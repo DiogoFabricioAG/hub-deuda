@@ -1,7 +1,8 @@
 # App «Mis observaciones» (11.6–11.9 de la guía). Cada área lee SOLO su vista
 # vObservacionesNN; en producción el usuario de un área tiene SELECT únicamente
 # sobre la suya, así que elegir otra área devuelve un error de permiso (T12).
-# La corrección se hace en el libro de SharePoint y entra por la misma carga.
+# La corrección se hace en el Excel del área; el worker on-premise lo vuelve a validar.
+# Los datos vienen del SQL Server local por el gateway de datos (sin datos en la nube).
 Screens:
   Screen1:
     Properties:
@@ -31,7 +32,7 @@ Screens:
       - lblSubtitulo:
           Control: Label
           Properties:
-            Text: ="Errores de carga por área · corrija el libro en SharePoint y vuelva a cargar (datos ficticios)"
+            Text: ="Errores de carga por área · corrija su Excel; el worker local lo vuelve a validar (datos ficticios)"
             Color: =RGBA(225, 210, 245, 1)
             Size: =12
             X: =24
@@ -93,48 +94,6 @@ Screens:
             Y: =116
             Width: =148
             Height: =40
-      - btnLibro:
-          Control: Classic/Button
-          Properties:
-            Text: ="Abrir carpeta del área"
-            OnSelect: |-
-              =Launch("https://unipe.sharepoint.com/sites/IntegracionDeuda/Entradas/Forms/AllItems.aspx?id=" &
-                EncodeUrl("/sites/IntegracionDeuda/Entradas/Area" & Left(ddArea.Selected.Value, 2)))
-            Fill: =RGBA(255, 255, 255, 1)
-            Color: =RGBA(92, 45, 145, 1)
-            BorderColor: =RGBA(92, 45, 145, 1)
-            BorderThickness: =1
-            X: =896
-            Y: =116
-            Width: =220
-            Height: =40
-      - btnCargarAhora:
-          Control: Classic/Button
-          Properties:
-            Text: ="Cargar ahora"
-            OnSelect: |-
-              =Set(varCarga, fl_cargar_ahora.Run(Value(Left(ddArea.Selected.Value, 2))));
-              Notify(varCarga.mensaje & If(IsBlank(varCarga.loteid), "", " · lote " & Left(varCarga.loteid, 8)),
-                If(varCarga.estado = "RECIBIDO", NotificationType.Success, NotificationType.Error))
-            Fill: =RGBA(16, 124, 16, 1)
-            X: =1128
-            Y: =116
-            Width: =214
-            Height: =40
-      - lblCarga:
-          Control: Label
-          Properties:
-            Text: |-
-              =If(IsBlank(varCarga), "Tras corregir el libro, pulse «Cargar ahora»; la validación tarda alrededor de 1 minuto",
-                "Última solicitud: " & varCarga.estado &
-                If(IsBlank(varCarga.loteid), "", " · lote " & Left(varCarga.loteid, 8) & " · pulse Actualizar en 1 minuto"))
-            Size: =11
-            Color: =If(IsBlank(varCarga) || varCarga.estado = "RECIBIDO", RGBA(90, 90, 90, 1), RGBA(196, 43, 28, 1))
-            Align: =Align.Right
-            X: =700
-            Y: =164
-            Width: =642
-            Height: =24
       - lblResumen:
           Control: Label
           Properties:

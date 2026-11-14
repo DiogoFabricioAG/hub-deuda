@@ -23,6 +23,7 @@ pyodbc.pooling = False
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "functions"))
 sys.path.insert(0, str(RAIZ / "tools"))
+sys.path.insert(0, str(RAIZ / "onprem"))
 
 import aplicar_sql  # noqa: E402
 import cargar_base_local  # noqa: E402

@@ -4,6 +4,7 @@ Devuelve filas normalizadas, errores con código, SHA-256 de los bytes y el
 número de filas no vacías leídas. No escribe en SQL: la publicación la hace
 repositorio_sql dentro de la transacción bloqueada.
 """
+import os
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -18,8 +19,10 @@ REGLAS_VERSION = "v1"
 CONTRATO_VERSION = "1"
 COLUMNAS = ["MovimientoId", "PapeletaId", "Tipo", "Monto",
             "FechaEvento", "Estado", "Referencia", "Detalle"]
-MAX_BYTES = 10 * 1024 * 1024
-MAX_EXPANDIDO = 50 * 1024 * 1024
+# Límites del libro. En Azure quedan en 10 MiB / 50 MiB; la versión on-premise los
+# amplía con variables de entorno (500 000 filas ≈ 16 MiB, ≈ 100 MiB expandido).
+MAX_BYTES = int(os.environ.get("HUB_MAX_BYTES", 10 * 1024 * 1024))
+MAX_EXPANDIDO = int(os.environ.get("HUB_MAX_EXPANDIDO", 50 * 1024 * 1024))
 LIMA = ZoneInfo("America/Lima")
 
 

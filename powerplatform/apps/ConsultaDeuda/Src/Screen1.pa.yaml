@@ -29,7 +29,7 @@ Screens:
       - lblSubtitulo:
           Control: Label
           Properties:
-            Text: ="Hub de Deuda · Azure SQL · datos ficticios de laboratorio (SI806U)"
+            Text: ="Hub de Deuda · SQL Server local vía gateway · datos ficticios de laboratorio (SI806U)"
             Color: =RGBA(200, 220, 240, 1)
             Size: =12
             X: =24

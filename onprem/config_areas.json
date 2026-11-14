@@ -1,0 +1,71 @@
+{
+  "_descripcion": "Mapeo por área (versión on-premise). Cada área conserva su Excel; aquí se declara cómo traducirlo al contrato v1. Si un área cambia una columna, se actualiza este archivo (gobernanza del dato). Las áreas no listadas no se procesan.",
+  "areas": [
+    {
+      "areaId": 1,
+      "nombre": "Tesorería",
+      "carpeta": "Area01",
+      "archivo": "Tesoreria_movimientos.xlsx",
+      "archivoId": "onprem-area01",
+      "hoja": null,
+      "columnas": {
+        "MovimientoId": ["N° Recibo", "Nro Recibo", "MovimientoId"],
+        "PapeletaId": ["Papeleta", "N° Papeleta", "PapeletaId"],
+        "Tipo": ["Concepto", "Tipo"],
+        "Monto": ["Importe", "Monto"],
+        "FechaEvento": ["Fecha de pago", "Fecha"],
+        "Estado": ["Situación", "Estado"],
+        "Referencia": ["Referencia", "Nro operación"],
+        "Detalle": ["Observación", "Detalle"]
+      },
+      "sinonimos": {
+        "Tipo": {"Abono": "PAGO", "Cancelación": "PAGO", "Pago": "PAGO"},
+        "Estado": {"Vigente": "ACTIVO", "Pagado": "ACTIVO", "Anulado": "ANULADO", "Anulada": "ANULADO"}
+      }
+    },
+    {
+      "areaId": 2,
+      "nombre": "Ejecutoría Coactiva",
+      "carpeta": "Area02",
+      "archivo": "Coactiva_cargos.xlsx",
+      "archivoId": "onprem-area02",
+      "hoja": null,
+      "columnas": {
+        "MovimientoId": ["ID", "Código mov"],
+        "PapeletaId": ["Nro Papeleta"],
+        "Tipo": ["Tipo mov"],
+        "Monto": ["Monto (S/)", "Monto"],
+        "FechaEvento": ["Fecha"],
+        "Estado": ["Estado"],
+        "Referencia": ["Operación"],
+        "Detalle": ["Glosa"]
+      },
+      "sinonimos": {
+        "Tipo": {"Recargo": "CARGO", "Interés": "CARGO", "Mora": "CARGO", "Embargo": "CARGO"},
+        "Estado": {"Vigente": "ACTIVO", "Activo": "ACTIVO", "Anulado": "ANULADO"}
+      }
+    },
+    {
+      "areaId": 7,
+      "nombre": "Administración Tributaria",
+      "carpeta": "Area07",
+      "archivo": "AdmTributaria_descuentos.xlsx",
+      "archivoId": "onprem-area07",
+      "hoja": null,
+      "columnas": {
+        "MovimientoId": ["Cod"],
+        "PapeletaId": ["Papeleta ID"],
+        "Tipo": ["Clase"],
+        "Monto": ["Descuento aplicado"],
+        "FechaEvento": ["Fecha resolución"],
+        "Estado": ["Estado"],
+        "Referencia": ["Resolución"],
+        "Detalle": ["Motivo"]
+      },
+      "sinonimos": {
+        "Tipo": {"Rebaja": "DESCUENTO", "Condonación": "DESCUENTO", "Beneficio": "DESCUENTO"},
+        "Estado": {"Vigente": "ACTIVO", "Anulado": "ANULADO"}
+      }
+    }
+  ]
+}
