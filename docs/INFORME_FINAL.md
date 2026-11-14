@@ -102,6 +102,24 @@ Excel «sucio» del área 1 (otros encabezados, fechas como texto, papeletas mal
 
 **Hallazgo:** la primera ejecución no terminó. Enviar ~1,6 M de correcciones en una sola llamada dejaba a SQL Server más de 79 min sin acabar; insertando por tandas de 20 000 filas el ritmo es de unas 8 000 filas/s. Quedó corregido en el worker.
 
+### 8.2.1 Cuándo aparecería una carga de 500 000 filas y cómo se carga
+
+El día a día son archivos pequeños; 500 000 filas es el caso extremo de diseño que planteó el profesor. Se presentaría en dos situaciones: la **carga inicial o histórica** de un área (una vez por área) y el **reenvío de un libro grande**, porque el hub trata cada archivo como el estado completo del área (un libro al que le faltan filas se rechaza como borrado) y, ante cualquier cambio, se procesa el libro entero.
+
+Cómo se carga, sin intervención manual: el área guarda su libro; el worker detecta el cambio por su huella SHA-256; se lee el libro en flujo y se traduce al modelo común con saneamiento y registro de correcciones; se validan **todas** las filas (un solo error rechaza el archivo completo); si todo es válido, se hace la carga masiva a staging y se publica en un solo movimiento cambiando el puntero del lote vigente; las correcciones se guardan en SQL por tandas de 20 000 filas. Mientras se carga, las apps siguen mostrando el saldo vigente anterior (es el diseño de la publicación atómica; no se midió con consultas durante la carga).
+
+| Métrica | Valor |
+|---|---|
+| Mapeo y saneamiento | 147 s · ≈ 3 400 filas/s |
+| Validar, cargar y publicar | 88 s · ≈ 5 700 filas/s |
+| Registrar 1 583 333 correcciones | 219 s · ≈ 7 200 correcciones/s |
+| Total Excel sucio → publicado | 454 s · ≈ 1 100 filas/s |
+| Mismo volumen con libro ya limpio | 130 s · ≈ 3 800 filas/s |
+| Libro con un error en la fila 490 000 | Rechazado en 224 s, base intacta |
+| Memoria máxima / equipo recomendado | 2,6 GB / unos 8 GB libres |
+
+**Precio del diseño:** no hay carga incremental; con un libro de este tamaño, cambiar una celda cuesta reprocesar el libro completo (≈ 7,5 min) y no el segundo de los libros pequeños. La mejora natural es cargar solo lo que cambió. No se midieron aún la carga de varias áreas grandes a la vez, el tamaño final en disco ni Excel reales con fórmulas.
+
 ### 8.3 Latencia: del Excel al dato visible
 
 El worker corre con un sondeo fijo (`--cada N`). Se guarda un Excel con error y luego el corregido, y se mide cuánto tarda en verse el resultado en SQL.

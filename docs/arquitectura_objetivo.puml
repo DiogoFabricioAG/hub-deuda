@@ -12,9 +12,9 @@ actor "Jefaturas" as JEF #FCE4EC
 
 rectangle "EMPRESA · on-premise (datos sensibles, sin puertos de entrada)" as ONPREM #F5F5F5 {
   folder "Carpetas por área\n(Excel original + copia raw inmutable)" as CARPETAS #FFE0B2
-  component "Worker\nrevisa si el Excel cambió\n(SHA-256)" as WORKER #FFE0B2
-  component "API de validación\n1. mapea columnas al modelo común\n2. limpia y normaliza\n3. valida todas las filas\n4. TODO O NADA por archivo" as API #C8E6C9
-  database "SQL Server único\nstaging · hub por puntero" as HUB #FFF59D
+  component "Worker\ndetecta el cambio (SHA-256)\nmapea y sanea con registro" as WORKER #FFE0B2
+  component "Validador todo o nada\nvalida todas las filas\npublica el lote completo" as API #C8E6C9
+  database "SQL Server único\nlotes · movimientos · correcciones" as HUB #FFF59D
   database "BDOrigen\ndeuda base (≈ 90 %)" as ORIGEN #FFF59D
   database "Vistas de lectura\n(solo lectura, por área)" as VISTAS #FFF59D
   component "Gateway de datos\n(agente de Windows)\nconexión SALIENTE 443" as GW #E1F5FE
@@ -22,14 +22,14 @@ rectangle "EMPRESA · on-premise (datos sensibles, sin puertos de entrada)" as O
 
 cloud "NUBE DE MICROSOFT · solo interfaz (no guarda datos)" as NUBE #E3F2FD {
   component "Power Apps\nConsulta de deuda\nMis observaciones" as APPS #BBDEFB
-  component "Power BI\nDirectQuery" as BI #D1C4E9
+  component "Power BI\nDirectQuery (pendiente de conectar)" as BI #D1C4E9
 }
 
 AREAS --> CARPETAS : guardan su Excel\n(formato actual)
 CARPETAS --> WORKER : archivo nuevo
-WORKER --> API : POST archivo
-API --> HUB : carga masiva\n+ publicación atómica
-ORIGEN --> HUB : deuda base\n(carga programada)
+WORKER --> API : lote normalizado
+API --> HUB : carga y publica\npor puntero
+ORIGEN --> HUB : deuda base
 HUB --> VISTAS : saldo = base + movimientos
 GW --> VISTAS : lee vistas
 APPS --> GW : consulta\n(relay de Microsoft)
@@ -46,7 +46,8 @@ end note
 note bottom of GW
   El gateway inicia la conexión hacia Microsoft: nadie entra
   al servidor y SQL Server no se expone a internet.
-  Alternativas: ngrok + API de lectura (PoC) o VPN / Azure Relay (producción).
+  ngrok se descartó (publica una URL); en producción, VPN o Azure Relay.
+  Credencial única: los permisos por área se aplican en la app.
 end note
 
 note bottom of HUB

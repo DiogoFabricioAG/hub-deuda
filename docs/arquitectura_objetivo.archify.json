@@ -6,58 +6,345 @@
     "output": "docs/arquitectura_objetivo-archify.html",
     "locale": "es",
     "quality_profile": "showcase",
-    "legend": { "mode": "auto", "entries": {
-      "external": { "label": "Personas" },
-      "database": { "label": "Datos on-premise" },
-      "backend": { "label": "Procesamiento y conexión" },
-      "frontend": { "label": "Apps y tablero (nube)" } } }
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "Personas"
+        },
+        "database": {
+          "label": "Datos on-premise"
+        },
+        "backend": {
+          "label": "Procesamiento y conexión"
+        },
+        "frontend": {
+          "label": "Apps y tablero (nube)"
+        }
+      }
+    }
   },
   "components": [
-    { "id": "areas", "type": "external", "icon": "person", "label": "Áreas 01–10", "sublabel": "contadores y abogados", "pos": [40, 40], "size": [170, 64] },
-    { "id": "carpetas", "type": "database", "label": "Carpetas por área", "sublabel": "Excel original + raw inmutable", "pos": [290, 40], "size": [200, 64] },
-    { "id": "worker", "type": "backend", "icon": "clock", "label": "Worker", "sublabel": "detecta Excel nuevo · SHA-256", "pos": [570, 40], "size": [200, 64] },
-    { "id": "api", "type": "backend", "label": "API de validación", "sublabel": "mapea · limpia · valida · todo o nada", "pos": [850, 40], "size": [220, 64] },
-    { "id": "hub", "type": "database", "label": "SQL Server único", "sublabel": "staging · hub por puntero", "pos": [850, 190], "size": [220, 64] },
-    { "id": "origen", "type": "database", "label": "BDOrigen", "sublabel": "deuda base ≈ 90 %", "pos": [1150, 190], "size": [190, 64] },
-    { "id": "vistas", "type": "database", "label": "Vistas de lectura", "sublabel": "solo lectura · por área", "pos": [850, 340], "size": [220, 64] },
-    { "id": "gateway", "type": "backend", "label": "Gateway de datos", "sublabel": "conexión saliente 443", "tag": "agente de Windows", "pos": [1150, 340], "size": [190, 64] },
-    { "id": "atencion", "type": "external", "icon": "person", "label": "Atención al ciudadano", "sublabel": "consulta de deuda", "pos": [1460, 190], "size": [190, 64] },
-    { "id": "apps", "type": "frontend", "label": "Power Apps", "sublabel": "Consulta · Mis observaciones", "pos": [1460, 340], "size": [190, 64] },
-    { "id": "bi", "type": "frontend", "label": "Power BI", "sublabel": "DirectQuery vía gateway", "pos": [1460, 490], "size": [190, 64] },
-    { "id": "jefaturas", "type": "external", "icon": "person", "label": "Jefaturas", "sublabel": "tablero de gestión", "pos": [1460, 640], "size": [190, 64] }
+    {
+      "id": "areas",
+      "type": "external",
+      "icon": "person",
+      "label": "Áreas 01–10",
+      "sublabel": "contadores y abogados",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "carpetas",
+      "type": "database",
+      "label": "Carpetas por área",
+      "sublabel": "Excel original + raw inmutable",
+      "pos": [
+        290,
+        40
+      ],
+      "size": [
+        200,
+        64
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "icon": "clock",
+      "label": "Worker",
+      "sublabel": "detecta cambio (SHA-256) · mapea · sanea",
+      "pos": [
+        570,
+        40
+      ],
+      "size": [
+        230,
+        64
+      ]
+    },
+    {
+      "id": "validador",
+      "type": "backend",
+      "label": "Validador todo o nada",
+      "sublabel": "valida todas las filas · publica el lote",
+      "pos": [
+        870,
+        40
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "hub",
+      "type": "database",
+      "label": "SQL Server único",
+      "sublabel": "lotes · movimientos · correcciones",
+      "pos": [
+        870,
+        190
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "origen",
+      "type": "database",
+      "label": "BDOrigen",
+      "sublabel": "deuda base ≈ 90 %",
+      "pos": [
+        1150,
+        190
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "vistas",
+      "type": "database",
+      "label": "Vistas de lectura",
+      "sublabel": "solo lectura · por área",
+      "pos": [
+        870,
+        340
+      ],
+      "size": [
+        220,
+        64
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "backend",
+      "label": "Gateway de datos",
+      "sublabel": "conexión saliente 443",
+      "tag": "agente de Windows",
+      "pos": [
+        1150,
+        340
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "atencion",
+      "type": "external",
+      "icon": "person",
+      "label": "Atención al ciudadano",
+      "sublabel": "consulta de deuda",
+      "pos": [
+        1460,
+        190
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "apps",
+      "type": "frontend",
+      "label": "Power Apps",
+      "sublabel": "Consulta · Mis observaciones",
+      "pos": [
+        1460,
+        340
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "bi",
+      "type": "frontend",
+      "label": "Power BI",
+      "sublabel": "DirectQuery vía gateway",
+      "pos": [
+        1460,
+        490
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "tag": "pendiente de conectar"
+    },
+    {
+      "id": "jefaturas",
+      "type": "external",
+      "icon": "person",
+      "label": "Jefaturas",
+      "sublabel": "tablero de gestión",
+      "pos": [
+        1460,
+        640
+      ],
+      "size": [
+        190,
+        64
+      ]
+    }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Empresa · on-premise · sin puertos de entrada", "wraps": ["carpetas", "worker", "api", "hub", "origen", "vistas", "gateway"] },
-    { "kind": "region", "label": "Nube de Microsoft · solo interfaz · no guarda datos", "wraps": ["apps", "bi"] }
+    {
+      "kind": "region",
+      "label": "Empresa · on-premise · sin puertos de entrada",
+      "wraps": [
+        "carpetas",
+        "worker",
+        "validador",
+        "hub",
+        "origen",
+        "vistas",
+        "gateway"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Nube de Microsoft · solo interfaz · no guarda datos",
+      "wraps": [
+        "apps",
+        "bi"
+      ]
+    }
   ],
   "connections": [
-    { "id": "c1", "from": "areas", "to": "carpetas", "label": "guardan Excel", "variant": "emphasis" },
-    { "id": "c2", "from": "carpetas", "to": "worker", "label": "archivo nuevo", "variant": "emphasis" },
-    { "id": "c3", "from": "worker", "to": "api", "label": "POST archivo", "variant": "emphasis" },
-    { "id": "c4", "from": "api", "to": "hub", "label": "carga masiva y publica", "variant": "emphasis" },
-    { "id": "c5", "from": "origen", "to": "hub", "label": "deuda base" },
-    { "id": "c6", "from": "hub", "to": "vistas", "label": "saldo" },
-    { "id": "c7", "from": "gateway", "to": "vistas", "label": "lee vistas" },
-    { "id": "c8", "from": "apps", "to": "gateway", "label": "vía relay", "variant": "security" },
-    { "id": "c9", "from": "bi", "to": "gateway", "label": "DirectQuery", "variant": "security", "fromSide": "left", "toSide": "bottom" },
-    { "id": "c10", "from": "atencion", "to": "apps", "label": "consulta" },
-    { "id": "c11", "from": "jefaturas", "to": "bi", "label": "tablero" }
+    {
+      "id": "c1",
+      "from": "areas",
+      "to": "carpetas",
+      "label": "guardan su Excel",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c2",
+      "from": "carpetas",
+      "to": "worker",
+      "label": "archivo nuevo",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c3",
+      "from": "worker",
+      "to": "validador",
+      "label": "lote normalizado",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c4",
+      "from": "validador",
+      "to": "hub",
+      "label": "carga y publica por puntero",
+      "variant": "emphasis"
+    },
+    {
+      "id": "c5",
+      "from": "origen",
+      "to": "hub",
+      "label": "deuda base"
+    },
+    {
+      "id": "c6",
+      "from": "hub",
+      "to": "vistas",
+      "label": "saldo"
+    },
+    {
+      "id": "c7",
+      "from": "gateway",
+      "to": "vistas",
+      "label": "lee vistas"
+    },
+    {
+      "id": "c8",
+      "from": "apps",
+      "to": "gateway",
+      "label": "vía relay",
+      "variant": "security"
+    },
+    {
+      "id": "c9",
+      "from": "bi",
+      "to": "gateway",
+      "label": "DirectQuery",
+      "variant": "security",
+      "fromSide": "left",
+      "toSide": "bottom"
+    },
+    {
+      "id": "c10",
+      "from": "atencion",
+      "to": "apps",
+      "label": "consulta"
+    },
+    {
+      "id": "c11",
+      "from": "jefaturas",
+      "to": "bi",
+      "label": "tablero"
+    }
   ],
   "cards": [
-    { "dot": "emerald", "title": "Todo o nada por archivo", "items": [
-      "Fraccionamientos y moras ligados entre filas no admiten carga parcial.",
-      "Si falla la fila 490 000 se rechaza el archivo y se devuelve la lista completa de errores.",
-      "La publicación mueve un puntero: nadie ve datos a medias." ] },
-    { "dot": "rose", "title": "Seguridad de la conexión", "items": [
-      "El gateway abre una conexión saliente (HTTPS 443) hacia Microsoft: nadie entra al servidor.",
-      "Power Apps y Power BI consultan por ese relay; SQL Server no se expone a internet.",
-      "La nube no guarda datos: solo transporta cada consulta." ] },
-    { "dot": "amber", "title": "Alternativas de conexión", "items": [
-      "ngrok con API de lectura: sirve para una PoC rápida, pero publica una URL y depende de un tercero.",
-      "Producción: VPN o Azure Relay.",
-      "Fase 2 si crece el volumen: particionar por área y réplica de lectura." ] },
-    { "dot": "violet", "title": "Permisos por área", "items": [
-      "La conexión por gateway usa una sola credencial: los permisos por área se aplican en la app.",
-      "Cada área consume su propia vista de solo lectura." ] }
+    {
+      "dot": "emerald",
+      "title": "Todo o nada por archivo",
+      "items": [
+        "Fraccionamientos y moras ligados entre filas no admiten carga parcial.",
+        "Un solo error rechaza el archivo completo y devuelve la lista completa de errores.",
+        "La publicación mueve un puntero: nadie ve datos a medias."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Limpieza con rastro",
+      "items": [
+        "El worker traduce el formato de cada área al modelo común, sin cambiar su Excel.",
+        "Corrige espacios, papeletas, montos, fechas y duplicados exactos.",
+        "Cada corrección queda registrada: fila, valor original y valor corregido."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Seguridad y permisos",
+      "items": [
+        "El gateway abre una conexión saliente (443): SQL Server no se expone a internet.",
+        "Cuenta de solo lectura sobre las vistas; la nube no guarda datos.",
+        "Credencial única: los permisos por área se aplican en la app.",
+        "ngrok se descartó (publica una URL); en producción, VPN o Azure Relay."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Resultados medidos",
+      "items": [
+        "500 000 filas sucias publicadas en 454 s; un error en la fila 490 000 rechaza todo.",
+        "Un Excel corregido se ve en SQL en 1,4 s (sondeo del worker cada 2 s).",
+        "23 pruebas automáticas aprobadas."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Pendiente y fase 2",
+      "items": [
+        "Mapeo de las otras 7 áreas (hoy 3 de 10) y Power BI por DirectQuery.",
+        "Worker y carga de la deuda base como tareas programadas.",
+        "Si crece el volumen: particionar por área, nunca un archivo entre instancias."
+      ]
+    }
   ]
 }
