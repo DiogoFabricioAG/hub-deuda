@@ -12,7 +12,8 @@ Los datos viven en SQL Server Express y en carpetas de la empresa (tu PC). La nu
 | Saneamiento con registro de correcciones (`dbo.CorreccionLote`) | Hecho |
 | Todo o nada por archivo | Hecho (mismo procesador que Azure) |
 | Límites ampliados para 500 000 filas (`HUB_MAX_BYTES`, `HUB_MAX_EXPANDIDO`) | Hecho |
-| Pruebas automáticas | 21 aprobadas, 1 omitida (la de volumen) |
+| Pruebas automáticas | 21 aprobadas, 2 de volumen opcionales |
+| Volumen: 500 000 filas sucias por el worker | Hecho: 454 s hasta publicado, rechazo todo o nada comprobado ([PRUEBA_VOLUMEN.md](PRUEBA_VOLUMEN.md)) |
 | Activar TCP/IP en SQL Express (`tools/onprem_preparar_sql.ps1`) | Hecho (puerto 1433) |
 | Gateway de datos local `gw-hubdeudax`, registrado en la región del entorno (South America) | Hecho |
 | Cuenta local `svc_hubdeuda` con solo lectura sobre las vistas (`tools/onprem_gateway_acceso.py`) | Hecho |

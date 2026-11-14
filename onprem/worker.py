@@ -132,9 +132,11 @@ def guardar_correcciones(datos, conectar=sqlconn.conectar):
                 continue
             filas = json.loads(p.read_text(encoding="utf-8"))
             cur.fast_executemany = True
-            cur.executemany("""INSERT dbo.CorreccionLote (LoteId, FilaOriginal, Campo, ValorOriginal,
-                               ValorCorregido, Regla) VALUES (?,?,?,?,?,?)""",
-                            [(lote, f[0], f[1][:50], f[2], f[3], f[4]) for f in filas])
+            # Por tandas: una sola llamada con cientos de miles de filas degrada SQL Server.
+            for i in range(0, len(filas), 20_000):
+                cur.executemany("""INSERT dbo.CorreccionLote (LoteId, FilaOriginal, Campo, ValorOriginal,
+                                   ValorCorregido, Regla) VALUES (?,?,?,?,?,?)""",
+                                [(lote, f[0], f[1][:50], f[2], f[3], f[4]) for f in filas[i:i + 20_000]])
             total += len(filas)
         p.unlink()
     return total
