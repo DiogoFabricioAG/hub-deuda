@@ -223,6 +223,21 @@ sequenceDiagram
 
 ---
 
+### CU12 — Cargar un libro de 500 000 filas
+
+| | |
+|---|---|
+| **Actor** | Un área con mucho historial (por ejemplo Tesorería), a través del worker |
+| **Cuándo ocurre** | (a) Carga inicial o histórica: el Excel acumulado de un área entra de una vez. (b) Reenvío de un libro grande: cada archivo es el estado completo del área, así que cualquier cambio reprocesa el libro entero |
+| **Precondición** | Archivo autorizado y registrado para el área; deuda base vigente; worker encendido; unos 8 GB de RAM libres (el proceso llega a 2,6 GB) |
+| **Flujo principal** | 1. El área guarda su Excel (≈ 16 MiB) en su carpeta. 2. El worker detecta el cambio por su huella SHA-256 y guarda el original. 3. Lee el libro en flujo, lo traduce al modelo común, sanea y registra cada corrección (≈ 2 min). 4. El validador revisa **todas** las filas y, si no hay errores, hace la carga masiva y publica el lote moviendo el puntero (≈ 1,5 min). 5. Las apps pasan a mostrar los datos nuevos de una sola vez (≈ 3,4 min desde que se guardó el archivo). 6. El worker guarda en SQL el registro de correcciones por tandas de 20 000 filas (≈ 3,7 min; no bloquea las consultas) |
+| **Alternos** | Un solo error (por ejemplo un monto ilegible en la fila 490 000) → CU06: se rechaza el archivo completo en ≈ 3,4 min, con la lista completa de errores, y la base queda intacta. Mismo archivo otra vez → CU08 (SIN_CAMBIOS). |
+| **Resultado** | 500 000 movimientos vigentes y un lote ACEPTADO, o el lote RECHAZADO con sus observaciones en «Mis observaciones» (CU07) |
+| **Métricas medidas** | Excel «sucio» de 500 000 filas → publicado: 205 s; total con el registro de correcciones: 428 s (≈ 7,1 min); 1 583 333 correcciones; memoria máxima 2,6 GB; consulta de saldo de una papeleta con el volumen cargado: ≈ 159 ms. Con el libro ya limpio en formato común: 130 s |
+| **Cómo está construido** | `onprem/worker.py` y `mapeo.py` (etapa 1), `functions/procesador.py` y `validacion.py` (etapa 2), `worker.guardar_correcciones` (etapa 3); límites ampliados con `HUB_MAX_BYTES` y `HUB_MAX_EXPANDIDO` |
+| **Evidencia** | `tests/test_volumen_worker.py`, `tools/demo_500k.py`, `docs/PRUEBA_VOLUMEN.md` y `docs/DEMO_500K.md`; `evidencias/2026-11-14_prueba-volumen-worker-500000.txt` |
+| **Limitaciones** | No hay carga incremental (cambiar una celda de un libro grande cuesta reprocesarlo entero). No se midió la carga de varias áreas grandes a la vez, el tamaño final en disco, qué ocurre si falta memoria ni Excel reales con fórmulas |
+
 ## 5. Estado de los casos de uso
 
 | Caso | Estado |
@@ -231,6 +246,7 @@ sequenceDiagram
 | CU09 | Publicado; falta instalar el SHIR en el PC |
 | CU10 | Funcionando en la app; Power BI pendiente de publicar |
 | CU11 | Implementado y probado en local |
+| CU12 | Funcionando y medido en la versión on-premise (500 000 filas) |
 
 ## 6. Enlaces de acceso
 

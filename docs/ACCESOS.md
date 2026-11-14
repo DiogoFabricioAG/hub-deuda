@@ -27,7 +27,6 @@ Configuración elegida: **suscripción de Azure de pago por uso creada con la cu
 | 2.2 | Tú | Ejecutar `m365 login` (CLI for Microsoft 365) | Acceso programático a SharePoint |
 | 2.3 | Yo | Crear carpetas Area01–Area10, la lista `ConfigAreas`, el historial de versiones y subir las 10 plantillas `movimientos.xlsx` | Sección 6 de la guía |
 
-
 ## 3. Power Platform (Developer Plan)
 
 | # | Quién | Acción | Para qué |
