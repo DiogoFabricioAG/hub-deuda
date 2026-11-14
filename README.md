@@ -1,6 +1,6 @@
 # Hub de Deuda — implementación Azure + Power Platform
 
-Implementación de la *Guía de implementación de la integración de datos* (SI806U, UNI) a partir del informe `ENTREGRABLE FINAL.docx`. Integra la deuda base de un SQL Server local con los Excel de diez áreas y publica una deuda consolidada en Azure SQL. **Todos los datos son ficticios.**
+Implementación de la *Guía de implementación de la integración de datos* (SI806U, UNI) a partir del informe `ENTREGRABLE FINAL.docx`. Integra la deuda base de un SQL Server local con los Excel de diez áreas y publica una deuda consolidada en Azure SQL. **Todos los datos son ficticios.** -> esto debido a que es una prueba de concepto, en donde nosotros colocamos los parámetros
 
 - **Documento técnico** (cómo está construido, paso a paso, pendientes y enlaces): [docs/DOCUMENTO_TECNICO.md](docs/DOCUMENTO_TECNICO.md)
 - **Casos de uso** (CU01–CU11 y cómo se implementa cada uno): [docs/CASOS_DE_USO.md](docs/CASOS_DE_USO.md)
