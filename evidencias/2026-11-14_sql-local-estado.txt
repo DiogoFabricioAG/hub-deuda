@@ -1,0 +1,47 @@
+Estado de HubDeuda_dev (SQL Server Express local) - 2026-11-14
+
+Saldo por papeleta (vDeuda):
+  P0001 60.00
+  P0002 1434.50
+  P0003 95.50
+
+Lotes por estado:
+  ACEPTADO 3
+  RECHAZADO 1
+
+Observaciones por codigo:
+  MONTO_INVALIDO 1
+
+Correcciones de saneamiento por regla:
+  SINONIMO 24
+  MONTO_FORMATO 9
+  FECHA_FORMATO 6
+  PAPELETA_FORMATO 5
+  DUPLICADO_EXACTO 2
+  ESPACIOS 2
+
+Permisos de la cuenta del gateway (solo lectura):
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area01
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area02
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area03
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area04
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area05
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area06
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area07
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area08
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area09
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_area10
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_bi
+  LAPTOP-693DSA3C\svc_hubdeuda -> rol_hub_consulta
+  NT SERVICE\PBIEgwService -> rol_hub_area01
+  NT SERVICE\PBIEgwService -> rol_hub_area02
+  NT SERVICE\PBIEgwService -> rol_hub_area03
+  NT SERVICE\PBIEgwService -> rol_hub_area04
+  NT SERVICE\PBIEgwService -> rol_hub_area05
+  NT SERVICE\PBIEgwService -> rol_hub_area06
+  NT SERVICE\PBIEgwService -> rol_hub_area07
+  NT SERVICE\PBIEgwService -> rol_hub_area08
+  NT SERVICE\PBIEgwService -> rol_hub_area09
+  NT SERVICE\PBIEgwService -> rol_hub_area10
+  NT SERVICE\PBIEgwService -> rol_hub_bi
+  NT SERVICE\PBIEgwService -> rol_hub_consulta

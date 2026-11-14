@@ -1,0 +1,11 @@
+=== Volumen por el worker: 500,000 filas ===
+Generar el Excel sucio: 57 s · 16.2 MiB
+[1] Mapeo y saneamiento: 147 s · filas=500,000 · correcciones=1,583,333 · pico de memoria 2,018 MiB
+[2] Validar + cargar + publicar: 88 s · estado=ACEPTADO · movimientos=500,000 · pico de memoria 2,607 MiB
+[3] Registrar correcciones en SQL: 219 s · 1,583,333 filas
+TOTAL Excel sucio → publicado: 454 s
+  lectura · saldo de una papeleta: 159 ms
+  lectura · detalle de 20 movimientos: 7 ms
+  lectura · estado de las fuentes: 11 ms
+[fila 490,000 ilegible] estado=RECHAZADO observaciones=[(490000, 'MONTO_INVALIDO')] (224 s) · antes=500,000 movimientos, después=500,000 · total igual: True
+1 passed in 808.78s (0:13:28)

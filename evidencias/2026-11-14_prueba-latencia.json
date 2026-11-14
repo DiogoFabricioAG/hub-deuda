@@ -1,0 +1,28 @@
+[
+  {
+    "intervalo_s": 2,
+    "con_error_detectado": {
+      "espera_s": 1.49,
+      "proceso_s": 0.46,
+      "total_s": 1.82
+    },
+    "corregido_visible": {
+      "espera_s": 1.03,
+      "proceso_s": 0.14,
+      "total_s": 1.21
+    }
+  },
+  {
+    "intervalo_s": 10,
+    "con_error_detectado": {
+      "espera_s": 9.48,
+      "proceso_s": 0.42,
+      "total_s": 9.88
+    },
+    "corregido_visible": {
+      "espera_s": 8.92,
+      "proceso_s": 0.19,
+      "total_s": 9.14
+    }
+  }
+]
