@@ -224,7 +224,7 @@ Matriz completa en [MATRIZ_PERMISOS.md](MATRIZ_PERMISOS.md).
 16. **Datos de demostración.** Cargo de 15 (área 02), descuento de 10 (área 07) y un libro con error (área 03): P0001 = 75, total 405, y el libro inválido rechazado con MONTO_INVALIDO.
 17. **Apps como código.** Se creó cada app vacía con sus orígenes de datos, se descargó con `pac`, se escribió su pantalla en `pa.yaml`, se empaquetó y se publicó en la solución. Se resolvieron dos problemas: el bloqueo de edición de Power Apps y las rutas con `\` al recomprimir el zip.
 18. **Documentación y Power BI en paralelo.** Dos subagentes generaron el diccionario de datos, la matriz de permisos, el registro de decisiones, el estado de pruebas y el proyecto PBIP.
-19. **Commit.** Todo se confirmó en git (`2004c`) tras revisar que no hubiera secretos; los archivos con datos de la cuenta quedaron ignorados.
+19. **Commit.** Todo se confirmó en git (`7c404`) tras revisar que no hubiera secretos; los archivos con datos de la cuenta quedaron ignorados.
 20. **Ahorro de la oferta gratuita de SQL.** La revisión detectó que la Function mantenía la base siempre encendida (1 conexión por minuto en la métrica). Se agregó la marca de estado en los metadatos de cada manifiesto, permiso de escritura solo en el contenedor `manifests` y la carga base dos veces al día; 17/17 pruebas locales.
 21. **Botón «Cargar ahora».** Se agregó el flujo `fl_cargar_ahora` como origen de datos de «Mis observaciones» desde Studio, se publicó, se descargó de nuevo con `pac` y se escribieron en `pa.yaml` el botón y la etiqueta de estado. Prueba: Tesorería → RECIBIDO (lote `02ff35c9`) → ACEPTADO por la Function en menos de 1 minuto.
 
@@ -271,7 +271,7 @@ Registro de decisiones en [DECISIONES.md](DECISIONES.md).
 | 7 | Abrir y publicar el tablero Power BI | Usuario | Power BI Desktop → abrir `powerbi\HubDeuda.pbip` → Publicar en «Mi área de trabajo» |
 | 8 | Pruebas T05–T15 en Azure con evidencias | Agente | T12 necesita la cuenta UNI de otro integrante; T13 necesita el SHIR |
 | 9 | Permisos por carpeta de área en SharePoint | Agente + usuario | Requiere cuentas o grupos por área |
-| 10 | ~~Confirmar en git la documentación y Power BI~~ | Agente | **Hecho** (commit `e37fb`) |
+| 10 | ~~Confirmar en git la documentación y Power BI~~ | Agente | **Hecho** (commit `3547b`) |
 | 11 | Cierre del curso | Usuario | Detener los disparadores y eliminar `rg-hubdeuda-dev` para que no siga cobrando |
 
 ---
