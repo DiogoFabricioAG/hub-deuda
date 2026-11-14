@@ -15,4 +15,4 @@ Empiece por `docs/INFORME_FINAL.docx` (el mismo texto está en `docs/INFORME_FIN
 | `tests/` | 23 pruebas automáticas + pruebas de volumen y latencia |
 | `powerplatform/`, `powerbi/` | Apps, flujos y modelo de Power BI |
 
-No incluye contraseñas, llaves ni archivos de cuenta. Para reproducir: sección 12 del informe.
+No incluye contraseñas, llaves ni archivos de cuenta -> esto por temas de seguridad como feedback de la clase.
